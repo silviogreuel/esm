@@ -21,47 +21,47 @@ import "sync"
 type Indexes map[string]interface{}
 
 type Document struct {
-	Index  string                 `json:"_index"`
-	Type   string                 `json:"_type"`
-	Id     string                 `json:"_id"`
-	source map[string]interface{} `json:"_source"`
-	Routing string 				  `json:"_routing"`
+	Index  string                 `json:"_index,omitempty"`
+	Type   string                 `json:"_type,omitempty"`
+	Id     string                 `json:"_id,omitempty"`
+	source map[string]interface{} `json:"_source,omitempty"`
+	Routing string 				  `json:"_routing,omitempty"`
 }
 
 type Scroll struct {
-	Took int `json:"took"`
-	ScrollId string `json:"_scroll_id"`
-	TimedOut bool   `json:"timed_out"`
+	Took int `json:"took,omitempty"`
+	ScrollId string `json:"_scroll_id,omitempty"`
+	TimedOut bool   `json:"timed_out,omitempty"`
 	Hits     struct {
-		     MaxScore float32    `json:"max_score"`
-		     Total int           `json:"total"`
-		     Docs  []interface{} `json:"hits"`
+		     MaxScore float32    `json:"max_score,omitempty"`
+		     Total int           `json:"total,omitempty"`
+		     Docs  []interface{} `json:"hits,omitempty"`
 	     } `json:"hits"`
 	Shards struct {
-		     Total int `json:"total"`
-		     Successful int `json:"successful"`
-		     Failed int `json:"failed"`
+		     Total int `json:"total,omitempty"`
+		     Successful int `json:"successful,omitempty"`
+		     Failed int `json:"failed,omitempty"`
 		     Failures []struct {
-			     Shard int     `json:"shard"`
-			     Index string  `json:"index"`
-			     Status int    `json:"status"`
-			     Reason interface{} `json:"reason"`
-		     } `json:"failures"`
-	     } `json:"_shards"`
+			     Shard int     `json:"shard,omitempty"`
+			     Index string  `json:"index,omitempty"`
+			     Status int    `json:"status,omitempty"`
+			     Reason interface{} `json:"reason,omitempty"`
+		     } `json:"failures,omitempty"`
+	     } `json:"_shards,omitempty"`
 }
 
 type ClusterVersion struct{
-	Name   string `json:"name"`
-	ClusterName   string `json:"cluster_name"`
+	Name   string `json:"name,omitempty"`
+	ClusterName   string `json:"cluster_name,omitempty"`
 	Version     struct {
-			 Number string    `json:"number"`
-			 LuceneVersion string    `json:"lucene_version"`
-		 } `json:"version"`
+			 Number string    `json:"number,omitempty"`
+			 LuceneVersion string    `json:"lucene_version,omitempty"`
+		 } `json:"version,omitempty"`
 }
 
 type ClusterHealth struct {
-	Name   string `json:"cluster_name"`
-	Status string `json:"status"`
+	Name   string `json:"cluster_name,omitempty"`
+	Status string `json:"status,omitempty"`
 }
 
 type Migrator struct{

@@ -68,6 +68,9 @@ func (s *ESAPIV0) Bulk(data *bytes.Buffer) {
         data.WriteRune('\n')
         url := fmt.Sprintf("%s/_bulk", s.Host)
 
+        log.Trace(url)
+        log.Trace(data.String())
+
         body,err:=Request("POST",url,s.Auth,data,s.HttpProxy)
 
         if err != nil {
