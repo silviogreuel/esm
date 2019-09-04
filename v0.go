@@ -74,10 +74,23 @@ func (s *ESAPIV0) Bulk(data *bytes.Buffer) {
         body,err:=Request("POST",url,s.Auth,data,s.HttpProxy)
 
         if err != nil {
+                fmt.Println(err)
                 log.Error(err)
                 return
         }
-        log.Trace(url,string(body))
+        //log.Trace(url,string(body))
+        //fmt.Println(string(body))
+        response:=BulkResponse{}
+        json.Unmarshal([]byte(body), &response)
+        //v,_:=json.MarshalIndent(&response,""," ")
+        //fmt.Println(string(v))
+        if err == nil {
+        //        fmt.Println(response)
+                if response.Errors{
+                        fmt.Println(body)
+                }
+        }
+
         data.Reset()
 }
 

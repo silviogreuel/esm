@@ -23,6 +23,7 @@ import (
 	"bytes"
 	"gopkg.in/cheggaaa/pb.v1"
 	"time"
+	"strings"
 )
 
 func (c *Migrator) NewBulkWorker(docCount *int, pb *pb.ProgressBar, wg *sync.WaitGroup) {
@@ -70,13 +71,35 @@ func (c *Migrator) NewBulkWorker(docCount *int, pb *pb.ProgressBar, wg *sync.Wai
 				tempTargetTypeName = c.Config.OverrideTypeName
 			}
 
+
 			doc := Document{
 				Index:  tempDestIndexName,
 				Type:   tempTargetTypeName,
 				source: docI["_source"].(map[string]interface{}),
 				Id:     docI["_id"].(string),
 			}
-			
+
+
+			if c.Config.RenameFields != "" {
+				kvs:=strings.Split(c.Config.RenameFields,",")
+				//fmt.Println(kvs)
+				for _,i:=range kvs{
+					fvs:=strings.Split(i,":")
+					oldField:=strings.TrimSpace(fvs[0])
+					newField:=strings.TrimSpace(fvs[1])
+					if oldField=="_type"{
+						doc.source[newField]=docI["_type"].(string)
+					}else{
+						v:=doc.source[oldField]
+						doc.source[newField]=v
+						delete(doc.source,oldField)
+					}
+				}
+			}
+
+
+			//fmt.Println(doc.Index,",",doc.Type,",",doc.Id)
+
 			// add doc "_routing"
 			if _, ok := docI["_routing"]; ok {
 				str,ok:=docI["_routing"].(string)
