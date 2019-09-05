@@ -80,6 +80,12 @@ migrate 5.x to 6.x and unify all the types to `doc`
 
 ```
 
+migrate 2.x to 7.x and rename `_type` to `type`
+```
+./esm -s http://localhost:9201 -x "source" -y "target"  -d https://localhost:9200 --rename="_type:type,age:myage"  -u"_doc"
+
+```
+
 
 ## Download
 https://github.com/medcl/elasticsearch-dump/releases

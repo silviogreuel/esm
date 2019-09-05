@@ -75,7 +75,14 @@ func main() {
 		if errs != nil {
 			return
 		}
-		if strings.HasPrefix(srcESVersion.Version.Number, "6.") {
+		if strings.HasPrefix(srcESVersion.Version.Number, "7.") {
+			log.Debug("source es is V7,", srcESVersion.Version.Number)
+			api := new(ESAPIV7)
+			api.Host = c.SourceEs
+			api.Auth = migrator.SourceAuth
+			api.HttpProxy=migrator.Config.SourceProxy
+			migrator.SourceESAPI = api
+		}else if strings.HasPrefix(srcESVersion.Version.Number, "6.") {
 			log.Debug("source es is V6,", srcESVersion.Version.Number)
 			api := new(ESAPIV5)
 			api.Host = c.SourceEs
@@ -110,11 +117,14 @@ func main() {
 				log.Error(err)
 				return
 			}
-			totalSize+=scroll.Hits.Total
 
-			if scroll != nil && scroll.Hits.Docs != nil {
+			temp:=scroll.(ScrollAPI)
 
-				if scroll.Hits.Total == 0 {
+			totalSize+=temp.GetHitsTotal()
+
+			if scroll != nil && temp.GetDocs() != nil {
+
+				if temp.GetHitsTotal() == 0 {
 					log.Error("can't find documents from source.")
 					return
 				}
@@ -124,10 +134,10 @@ func main() {
 					wg.Add(1)
 					//process input
 					// start scroll
-					scroll.ProcessScrollResult(&migrator, fetchBar)
+					temp.ProcessScrollResult(&migrator, fetchBar)
 
 					// loop scrolling until done
-					for scroll.Next(&migrator, fetchBar) == false {
+					for temp.Next(&migrator, fetchBar) == false {
 					}
 					fetchBar.Finish()
 					// finished, close doc chan and wait for goroutines to be done
@@ -198,7 +208,14 @@ func main() {
 			return
 		}
 
-		if strings.HasPrefix(descESVersion.Version.Number, "6.") {
+		if strings.HasPrefix(descESVersion.Version.Number, "7.") {
+			log.Debug("target es is V7,", descESVersion.Version.Number)
+			api := new(ESAPIV7)
+			api.Host = c.TargetEs
+			api.Auth = migrator.TargetAuth
+			api.HttpProxy=migrator.Config.TargetProxy
+			migrator.TargetESAPI = api
+		}else if strings.HasPrefix(descESVersion.Version.Number, "6.") {
 			log.Debug("target es is V6,", descESVersion.Version.Number)
 			api := new(ESAPIV5)
 			api.Host = c.TargetEs
@@ -484,3 +501,4 @@ func (c *Migrator) ClusterReady(api ESAPI) (*ClusterHealth, bool) {
 
 	return health, false
 }
+

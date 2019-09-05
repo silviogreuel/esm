@@ -23,6 +23,50 @@ import (
 )
 
 
+type ScrollAPI interface{
+	GetScrollId()string
+	GetHitsTotal()int
+	GetDocs() []interface{}
+	ProcessScrollResult(c *Migrator, bar *pb.ProgressBar)
+	Next(c *Migrator, bar *pb.ProgressBar) (done bool)
+}
+
+
+func (scroll *Scroll) GetHitsTotal()int{
+	//fmt.Println("total v0:",scroll.Hits.Total)
+	return scroll.Hits.Total
+}
+
+func (scroll *Scroll) GetScrollId()string{
+	return scroll.ScrollId
+}
+
+func (scroll *Scroll) GetDocs()[]interface{}{
+
+	//fmt.Println("docs v0:",scroll.Hits)
+
+	return scroll.Hits.Docs
+}
+
+func (scroll *ScrollV7) GetHitsTotal()int{
+	//fmt.Println("total v7:",scroll.Hits.Total.Value)
+
+	return scroll.Hits.Total.Value
+}
+
+
+func (scroll *ScrollV7) GetScrollId()string{
+	return scroll.ScrollId
+}
+
+func (scroll *ScrollV7) GetDocs()[]interface{}{
+
+	//fmt.Println("docs v7:",scroll.Hits)
+
+	return scroll.Hits.Docs
+}
+
+
 // Stream from source es instance. "done" is an indicator that the stream is
 // over
 func (s *Scroll) ProcessScrollResult(c *Migrator, bar *pb.ProgressBar){
@@ -38,6 +82,7 @@ func (s *Scroll) ProcessScrollResult(c *Migrator, bar *pb.ProgressBar){
 
 	// write all the docs into a channel
 	for _, docI := range s.Hits.Docs {
+		//fmt.Println(docI)
 		c.DocChan <- docI.(map[string]interface{})
 	}
 }
@@ -50,16 +95,62 @@ func (s *Scroll) Next(c *Migrator, bar *pb.ProgressBar) (done bool) {
 		return false
 	}
 
-	if scroll.Hits.Docs == nil || len(scroll.Hits.Docs) <= 0 {
+	docs:=scroll.(ScrollAPI).GetDocs()
+	if docs == nil || len(docs) <= 0 {
 		log.Debug("scroll result is empty")
 		return true
 	}
 
-	scroll.ProcessScrollResult(c,bar)
+	scroll.(ScrollAPI).ProcessScrollResult(c,bar)
 
 	//update scrollId
-	s.ScrollId=scroll.ScrollId
+	s.ScrollId=scroll.(ScrollAPI).GetScrollId()
 
 	return
 }
+
+
+
+// Stream from source es instance. "done" is an indicator that the stream is
+// over
+func (s *ScrollV7) ProcessScrollResult(c *Migrator, bar *pb.ProgressBar){
+
+	//update progress bar
+	bar.Add(len(s.Hits.Docs))
+
+	// show any failures
+	for _, failure := range s.Shards.Failures {
+		reason, _ := json.Marshal(failure.Reason)
+		log.Errorf(string(reason))
+	}
+
+	// write all the docs into a channel
+	for _, docI := range s.Hits.Docs {
+		//fmt.Println(docI)
+		c.DocChan <- docI.(map[string]interface{})
+	}
+}
+
+func (s *ScrollV7) Next(c *Migrator, bar *pb.ProgressBar) (done bool) {
+
+	scroll,err:=c.SourceESAPI.NextScroll(c.Config.ScrollTime,s.ScrollId)
+	if err != nil {
+		log.Error(err)
+		return false
+	}
+
+	docs:=scroll.(ScrollAPI).GetDocs()
+	if docs == nil || len(docs) <= 0 {
+		log.Debug("scroll result is empty")
+		return true
+	}
+
+	scroll.(ScrollAPI).ProcessScrollResult(c,bar)
+
+	//update scrollId
+	s.ScrollId=scroll.(ScrollAPI).GetScrollId()
+
+	return
+}
+
 

@@ -28,6 +28,7 @@ type Document struct {
 	Routing string                 `json:"_routing,omitempty"`
 }
 
+
 type Scroll struct {
 	Took     int    `json:"took,omitempty"`
 	ScrollId string `json:"_scroll_id,omitempty"`
@@ -40,6 +41,7 @@ type Scroll struct {
 	Shards struct {
 		Total      int `json:"total,omitempty"`
 		Successful int `json:"successful,omitempty"`
+		Skipped int `json:"skipped,omitempty"`
 		Failed     int `json:"failed,omitempty"`
 		Failures   []struct {
 			Shard  int         `json:"shard,omitempty"`
@@ -48,6 +50,18 @@ type Scroll struct {
 			Reason interface{} `json:"reason,omitempty"`
 		} `json:"failures,omitempty"`
 	} `json:"_shards,omitempty"`
+}
+
+type ScrollV7 struct {
+	Scroll
+	Hits     struct {
+		MaxScore float32       `json:"max_score,omitempty"`
+		Total    struct{
+			Value int `json:"value,omitempty"`
+			Relation string `json:"relation,omitempty"`
+		}           `json:"total,omitempty"`
+		Docs     []interface{} `json:"hits,omitempty"`
+	} `json:"hits"`
 }
 
 type ClusterVersion struct {

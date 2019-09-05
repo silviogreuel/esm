@@ -66,7 +66,7 @@ func (s *ESAPIV5) Refresh(name string) (err error) {
         return s.ESAPIV0.Refresh(name)
 }
 
-func (s *ESAPIV5) NewScroll(indexNames string,scrollTime string,docBufferCount int,query string, slicedId,maxSlicedCount int, fields string)(scroll *Scroll, err error){
+func (s *ESAPIV5) NewScroll(indexNames string,scrollTime string,docBufferCount int,query string, slicedId,maxSlicedCount int, fields string)(scroll interface{}, err error){
         url := fmt.Sprintf("%s/%s/_search?scroll=%s&size=%d", s.Host, indexNames, scrollTime,docBufferCount)
 
         jsonBody:=""
@@ -138,7 +138,7 @@ func (s *ESAPIV5) NewScroll(indexNames string,scrollTime string,docBufferCount i
         return scroll,err
 }
 
-func (s *ESAPIV5) NextScroll(scrollTime string,scrollId string)(*Scroll,error)  {
+func (s *ESAPIV5) NextScroll(scrollTime string,scrollId string)(interface{},error)  {
         id := bytes.NewBufferString(scrollId)
 
         url:=fmt.Sprintf("%s/_search/scroll?scroll=%s&scroll_id=%s", s.Host, scrollTime, id)
