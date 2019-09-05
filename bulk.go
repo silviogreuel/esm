@@ -121,7 +121,7 @@ func (c *Migrator) NewBulkWorker(docCount *int, pb *pb.ProgressBar, wg *sync.Wai
 
 		// encode the doc and and the _source field for a bulk request
 			post := map[string]Document{
-				"create": doc,
+				"index": doc,
 			}
 			if err = docEnc.Encode(post); err != nil {
 				log.Error(err)

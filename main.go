@@ -11,7 +11,7 @@ import (
 	"bufio"
 	log "github.com/cihub/seelog"
 	goflags "github.com/jessevdk/go-flags"
-	pb "gopkg.in/cheggaaa/pb.v1"
+	"gopkg.in/cheggaaa/pb.v1"
 	"os"
 	"io"
 	"io/ioutil"
@@ -485,8 +485,12 @@ func (c *Migrator) ClusterVersion(host string, auth *Auth,proxy string) (*Cluste
 }
 
 func (c *Migrator) ClusterReady(api ESAPI) (*ClusterHealth, bool) {
-
 	health := api.ClusterHealth()
+
+	if !c.Config.WaitForGreen{
+		return health,true
+	}
+
 	if health.Status == "red" {
 		return health, false
 	}
