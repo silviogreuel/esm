@@ -42,7 +42,7 @@ func Get(url string,auth *Auth,proxy string) (*http.Response, string, []error) {
 		request.SetBasicAuth(auth.User,auth.Pass)
 	}
 
-	request.Header["Content-Type"]= "application/json"
+	//request.Header["Content-Type"]= "application/json"
 	request.Header.Set("Content-Type", "application/json")
 
 	if(len(proxy)>0){
