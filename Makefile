@@ -76,6 +76,7 @@ config:
 	go get github.com/olekukonko/ts
 	go get github.com/cihub/seelog
 	go get github.com/parnurzeal/gorequest
+	go get github.com/mattn/go-isatty
 
 dist: cross-build package
 
