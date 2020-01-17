@@ -15,6 +15,7 @@ import (
 	"os"
 	"io"
 	"io/ioutil"
+	"github.com/mattn/go-isatty"
 )
 
 func main() {
@@ -35,6 +36,11 @@ func main() {
 		return
 	}
 
+
+	//WriteToLogstash(c)
+
+	//return
+
 	setInitLogging(c.LogLevel)
 
 	if len(c.SourceEs) == 0 && len(c.DumpInputFile) == 0 {
@@ -51,12 +57,22 @@ func main() {
 		return
 	}
 
+	var showBar bool = false
+	if isatty.IsTerminal(os.Stdout.Fd()) {
+		showBar=true
+	} else if isatty.IsCygwinTerminal(os.Stdout.Fd()) {
+		showBar=true
+	} else {
+		showBar=false
+	}
+
 	// enough of a buffer to hold all the search results across all workers
 	migrator.DocChan = make(chan map[string]interface{}, c.DocBufferCount*c.Workers*10)
 
 	var srcESVersion *ClusterVersion
 	// create a progressbar and start a docCount
-	var outputBar *pb.ProgressBar
+	var outputBar *pb.ProgressBar = pb.New(1).Prefix("Output ")
+
 	var fetchBar = pb.New(1).Prefix("Scroll")
 
 	wg := sync.WaitGroup{}
@@ -107,7 +123,7 @@ func main() {
 
 		if(c.ScrollSliceSize<1){c.ScrollSliceSize=1}
 
-		fetchBar.ShowBar=false
+		//fetchBar.ShowBar=false
 
 		totalSize:=0;
 		finishedSlice:=0
@@ -139,7 +155,11 @@ func main() {
 					// loop scrolling until done
 					for temp.Next(&migrator, fetchBar) == false {
 					}
-					fetchBar.Finish()
+
+					if showBar {
+						fetchBar.Finish()
+					}
+
 					// finished, close doc chan and wait for goroutines to be done
 					wg.Done()
 					finishedSlice++
@@ -155,8 +175,7 @@ func main() {
 
 		if(totalSize>0){
 			fetchBar.Total=int64(totalSize)
-			fetchBar.ShowBar=true
-			outputBar = pb.New(totalSize).Prefix("Output ")
+			outputBar.Total=int64(totalSize)
 		}
 
 
@@ -181,17 +200,28 @@ func main() {
 			lineCount += 1
 		}
 		log.Trace("file line,", lineCount)
+
+
 		fetchBar := pb.New(lineCount).Prefix("Read")
 		outputBar = pb.New(lineCount).Prefix("Output ")
+
+
 		f.Close()
 
+
 		go migrator.NewFileReadWorker(fetchBar,&wg)
+
+
 	}
 
-	// start pool
-	pool, err := pb.StartPool(fetchBar, outputBar)
-	if err != nil {
-		panic(err)
+	var pool *pb.Pool
+	if showBar{
+
+		// start pool
+		pool, err = pb.StartPool(fetchBar, outputBar)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	//dealing with output
@@ -437,9 +467,14 @@ func main() {
 	}
 
 	wg.Wait()
-	outputBar.Finish()
-	// close pool
-	pool.Stop()
+
+	if showBar{
+
+		outputBar.Finish()
+		// close pool
+		pool.Stop()
+
+	}
 
 	log.Info("data migration finished.")
 }
