@@ -1,8 +1,6 @@
 # An Elasticsearch Migration Tool
 
-Support cross version and http basic auth.
-
-[![asciicast](https://asciinema.org/a/e562wy1ro30yboznkj5f539md.png)](https://asciinema.org/a/e562wy1ro30yboznkj5f539md)
+Elasticsearch cross version data migration.
 
 ## Features:
 
@@ -14,13 +12,13 @@ Support cross version and http basic auth.
 
 *  Support http basic auth
 
-*  Support dump into local file
+*  Support dump index to local file
 
-*  Support loading from local file
+*  Support loading index from local file
 
 *  Support http proxy
 
-*  Support sliced scroll (only for elasticsearch 5.0)
+*  Support sliced scroll ( elasticsearch 5.0 +)
 
 
 ## Example:
@@ -80,7 +78,7 @@ migrate 5.x to 6.x and unify all the types to `doc`
 
 ```
 
-migrate 2.x to 7.x and rename `_type` to `type`
+to migrate version 7.x and you may need to rename `_type` to `_doc`
 ```
 ./esm -s http://localhost:9201 -x "source" -y "target"  -d https://localhost:9200 --rename="_type:type,age:myage"  -u"_doc"
 
@@ -100,29 +98,46 @@ if download version is not fill you environment,you may try to compile it yourse
 ## Options
 
 ```
-  -s, --source=     source elasticsearch instance
-  -d, --dest=       destination elasticsearch instance
-  -q, --query=      query against source elasticsearch instance, filter data before migrate, ie: name:medcl
-  -m, --source_auth basic auth of source elasticsearch instance, ie: user:pass
-  -n, --dest_auth   basic auth of target elasticsearch instance, ie: user:pass
-  -c, --count=      number of documents at a time: ie "size" in the scroll request (10000)
-  --sliced_scroll_size=      size of sliced scroll, to make it work, the size should be > 1, default:"1"
-  -t, --time=       scroll time (1m)
-      --shards=     set a number of shards on newly created indexes
-      --copy_settings copy index settings from source
-      --copy_mappings copy mappings mappings from source
-  -f, --force      delete destination index before copying, default:false
-  -x, --src_indexes=    list of indexes to copy, comma separated (_all), support wildcard match(*)
-  -y, --dest_index=    indexes name to save, allow only one indexname, original indexname will be used if not specified
-  -a, --all         copy indexes starting with . and _ (false)
-  -w, --workers=    concurrency number for bulk workers, default is: "1"
-  -b  --bulk_size 	bulk size in MB" default:5
-  -v  --log 	    setting log level,options:trace,debug,info,warn,error
-  -i  --input_file  indexing from local dump file, file format: {"_id":"xxx","_index":"xxx","_source":{"xxx":"xxx"},"_type":"xxx"  }
-  -o  --output_file output documents of source index into local file, file format same as input_file.
-  --source_proxy     set proxy to source http connections, ie: http://127.0.0.1:8080
-  --dest_proxy       set proxy to destination http connections, ie: http://127.0.0.1:8080
-  --refresh          refresh after migration finished
+Usage:
+  esm [OPTIONS]
+
+Application Options:
+  -s, --source=                    source elasticsearch instance, ie: http://localhost:9200
+  -q, --query=                     query against source elasticsearch instance, filter data before migrate, ie: name:medcl
+  -d, --dest=                      destination elasticsearch instance, ie: http://localhost:9201
+  -m, --source_auth=               basic auth of source elasticsearch instance, ie: user:pass
+  -n, --dest_auth=                 basic auth of target elasticsearch instance, ie: user:pass
+  -c, --count=                     number of documents at a time: ie "size" in the scroll request (10000)
+  -w, --workers=                   concurrency number for bulk workers (1)
+  -b, --bulk_size=                 bulk size in MB (5)
+  -t, --time=                      scroll time (1m)
+      --sliced_scroll_size=        size of sliced scroll, to make it work, the size should be > 1 (1)
+  -f, --force                      delete destination index before copying
+  -a, --all                        copy indexes starting with . and _
+      --copy_settings              copy index settings from source
+      --copy_mappings              copy index mappings from source
+      --shards=                    set a number of shards on newly created indexes
+  -x, --src_indexes=               indexes name to copy,support regex and comma separated list (_all)
+  -y, --dest_index=                indexes name to save, allow only one indexname, original indexname will be used if not specified
+  -u, --type_override=             override type name
+      --green                      wait for both hosts cluster status to be green before dump. otherwise yellow is okay
+  -v, --log=                       setting log level,options:trace,debug,info,warn,error (INFO)
+  -o, --output_file=               output documents of source index into local file
+  -i, --input_file=                indexing from local dump file
+      --input_file_type=           the data type of input file, options: dump, json_line, json_array, log_line (dump)
+      --source_proxy=              set proxy to source http connections, ie: http://127.0.0.1:8080
+      --dest_proxy=                set proxy to target http connections, ie: http://127.0.0.1:8080
+      --refresh                    refresh after migration finished
+      --fields=                    output fields, comma separated, ie: col1,col2,col3,...
+      --rename=                    rename source fields, comma separated, ie: _type:type, name:myname
+  -l, --logstash_endpoint=         target logstash tcp endpoint, ie: 127.0.0.1:5055
+      --secured_logstash_endpoint  target logstash tcp endpoint was secured by TLS
+      --test_level=                target logstash tcp endpoint was secured by TLS
+      --test_environment=          target logstash tcp endpoint was secured by TLS
+
+Help Options:
+  -h, --help                       Show this help message
+
 
 ```
 
@@ -134,12 +149,26 @@ From       | To
 1.x | 1.x
 1.x | 2.x
 1.x | 5.0
+1.x | 6.0
+1.x | 7.0
 2.x | 1.x
 2.x | 2.x
 2.x | 5.0
+2.x | 6.0
+2.x | 7.0
 5.0 | 1.x
 5.0 | 2.x
 5.0 | 5.0
-6.x | 6.x
 5.x | 6.x
+5.x | 7.x
+6.0 | 1.x
+6.0 | 2.x
+6.0 | 5.0
+6.x | 6.x
+6.x | 7.x
+7.0 | 1.x
+7.0 | 2.x
+7.0 | 5.0
+7.x | 6.x
+7.x | 7.x
 
