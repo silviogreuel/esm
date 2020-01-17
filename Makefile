@@ -4,7 +4,7 @@ OLDGOPATH=${GOPATH}
 NEWGOPATH:=${CWD}:${OLDGOPATH}
 export GOPATH=$(NEWGOPATH)
 PATH := $(PATH):$(GOPATH)/bin
-
+GO111MODULE=off
 
 build: clean config
 	go build  -o bin/esm
