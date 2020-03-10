@@ -84,6 +84,13 @@ to migrate version 7.x and you may need to rename `_type` to `_doc`
 
 ```
 
+filter migration with range query
+
+```
+./esm -s https://192.168.3.98:9200 -m elastic:password -o json.out -x kibana_sample_data_ecommerce -q "order_date:[2020-02-01T21:59:02+00:00 TO 2020-03-01T21:59:02+00:00]"
+
+```
+
 
 ## Download
 https://github.com/medcl/elasticsearch-dump/releases
