@@ -7,6 +7,7 @@ PATH := $(PATH):$(GOPATH)/bin
 GO111MODULE=off
 
 build: clean config
+	@go version
 	go build  -o bin/esm
 
 tar: build

@@ -26,13 +26,14 @@ import (
 	"io/ioutil"
 	"strings"
 	"regexp"
+	"github.com/infinitbyte/framework/core/util"
 )
 
-type ESAPIV7 struct {
-	ESAPIV6
+type ESAPIV6 struct {
+	ESAPIV5
 }
 
-func (s *ESAPIV7) NewScroll(indexNames string, scrollTime string, docBufferCount int, query string, slicedId, maxSlicedCount int, fields string) (scroll interface{}, err error) {
+func (s *ESAPIV6) NewScroll(indexNames string, scrollTime string, docBufferCount int, query string, slicedId, maxSlicedCount int, fields string) (scroll interface{}, err error) {
 	url := fmt.Sprintf("%s/%s/_search?scroll=%s&size=%d", s.Host, indexNames, scrollTime, docBufferCount)
 
 	jsonBody := ""
@@ -103,7 +104,7 @@ func (s *ESAPIV7) NewScroll(indexNames string, scrollTime string, docBufferCount
 	return scroll, err
 }
 
-func (s *ESAPIV7) NextScroll(scrollTime string, scrollId string) (interface{}, error) {
+func (s *ESAPIV6) NextScroll(scrollTime string, scrollId string) (interface{}, error) {
 	id := bytes.NewBufferString(scrollId)
 
 	url := fmt.Sprintf("%s/_search/scroll?scroll=%s&scroll_id=%s", s.Host, scrollTime, id)
@@ -136,16 +137,16 @@ func (s *ESAPIV7) NextScroll(scrollTime string, scrollId string) (interface{}, e
 }
 
 
-func (s *ESAPIV7) GetIndexSettings(indexNames string) (*Indexes,error){
+func (s *ESAPIV6) GetIndexSettings(indexNames string) (*Indexes,error){
 	return s.ESAPIV0.GetIndexSettings(indexNames)
 }
 
-func (s *ESAPIV7) UpdateIndexSettings(indexName string,settings map[string]interface{})(error){
+func (s *ESAPIV6) UpdateIndexSettings(indexName string,settings map[string]interface{})(error){
 	return s.ESAPIV0.UpdateIndexSettings(indexName,settings)
 }
 
 
-func (s *ESAPIV7) GetIndexMappings(copyAllIndexes bool, indexNames string) (string, int, *Indexes, error) {
+func (s *ESAPIV6) GetIndexMappings(copyAllIndexes bool, indexNames string) (string, int, *Indexes, error) {
 	url := fmt.Sprintf("%s/%s/_mapping", s.Host, indexNames)
 	resp, body, errs := Get(url, s.Auth,s.HttpProxy)
 
@@ -214,17 +215,19 @@ func (s *ESAPIV7) GetIndexMappings(copyAllIndexes bool, indexNames string) (stri
 }
 
 
-func (s *ESAPIV7) UpdateIndexMapping(indexName string,settings map[string]interface{}) error {
+func (s *ESAPIV6) UpdateIndexMapping(indexName string,settings map[string]interface{}) error {
 
 	log.Debug("start update mapping: ", indexName, settings)
 
 	delete(settings,"dynamic_templates")
 
-	//for name, mapping := range settings {
+
+
+	for name, _ := range settings {
 
 		log.Debug("start update mapping: ", indexName,", ",settings)
 
-		url := fmt.Sprintf("%s/%s/_mapping", s.Host, indexName)
+		url := fmt.Sprintf("%s/%s/%s/_mapping", s.Host, indexName,name)
 
 		body := bytes.Buffer{}
 		enc := json.NewEncoder(&body)
@@ -232,10 +235,10 @@ func (s *ESAPIV7) UpdateIndexMapping(indexName string,settings map[string]interf
 		res, err := Request("POST", url, s.Auth, &body,s.HttpProxy)
 		if(err!=nil){
 			log.Error(url)
-			log.Error(body.String())
+			log.Error(util.ToJson(settings,false))
 			log.Error(err,res)
 			panic(err)
 		}
-	//}
+	}
 	return nil
 }

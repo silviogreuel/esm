@@ -42,8 +42,8 @@ func Get(url string,auth *Auth,proxy string) (*http.Response, string, []error) {
 		request.SetBasicAuth(auth.User,auth.Pass)
 	}
 
-	//request.Header["Content-Type"]= "application/json"
-	request.Header.Set("Content-Type", "application/json")
+	request.Header["Content-Type"]= "application/json"
+	//request.Header.Set("Content-Type", "application/json")
 
 	if(len(proxy)>0){
 		request.Proxy(proxy)
@@ -66,8 +66,8 @@ func Post(url string,auth *Auth, body string,proxy string)(*http.Response, strin
 		request.SetBasicAuth(auth.User,auth.Pass)
 	}
 
-	request.Header.Set("Content-Type", "application/json")
-	//request.Header["Content-Type"]="application/json"
+	//request.Header.Set("Content-Type", "application/json")
+	request.Header["Content-Type"]="application/json"
 	
 	if(len(proxy)>0){
 		request.Proxy(proxy)
@@ -133,13 +133,19 @@ func Request(method string,r string,auth *Auth,body *bytes.Buffer,proxy string)(
 
 	client.Transport=tr
 
+	var err error
 	var reqest *http.Request
-	if(body!=nil){
-		reqest, _ =http.NewRequest(method,r,body)
+	if body!=nil {
+		reqest, err =http.NewRequest(method,r,body)
 	}else{
-		reqest, _ = newDeleteRequest(client,method,r)
+		reqest, err = newDeleteRequest(client,method,r)
 	}
-	if(auth!=nil){
+
+	if err!=nil {
+		panic(err)
+	}
+
+	if auth!=nil {
 		reqest.SetBasicAuth(auth.User,auth.Pass)
 	}
 

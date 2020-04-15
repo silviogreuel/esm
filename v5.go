@@ -42,12 +42,17 @@ func (s *ESAPIV5) Bulk(data *bytes.Buffer){
 func (s *ESAPIV5) GetIndexSettings(indexNames string) (*Indexes,error){
         return s.ESAPIV0.GetIndexSettings(indexNames)
 }
+
+func (s *ESAPIV5) UpdateIndexSettings(indexName string,settings map[string]interface{})(error){
+        return s.ESAPIV0.UpdateIndexSettings(indexName,settings)
+}
+
 func (s *ESAPIV5) GetIndexMappings(copyAllIndexes bool,indexNames string)(string,int,*Indexes,error){
         return s.ESAPIV0.GetIndexMappings(copyAllIndexes,indexNames)
 }
 
-func (s *ESAPIV5) UpdateIndexSettings(indexName string,settings map[string]interface{})(error){
-        return s.ESAPIV0.UpdateIndexSettings(indexName,settings)
+func (s *ESAPIV5) UpdateIndexMapping(indexName string,settings map[string]interface{}) error {
+        return s.ESAPIV0.UpdateIndexMapping(indexName,settings)
 }
 
 func (s *ESAPIV5) DeleteIndex(name string) (err error) {
@@ -58,9 +63,7 @@ func (s *ESAPIV5) CreateIndex(name string,settings map[string]interface{}) (err 
         return s.ESAPIV0.CreateIndex(name,settings)
 }
 
-func (s *ESAPIV5) UpdateIndexMapping(indexName string,settings map[string]interface{}) error {
-        return s.ESAPIV0.UpdateIndexMapping(indexName,settings)
-}
+
 
 func (s *ESAPIV5) Refresh(name string) (err error) {
         return s.ESAPIV0.Refresh(name)
