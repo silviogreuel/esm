@@ -103,7 +103,7 @@ READ_DOCS:
 
 			//fmt.Println(doc.Index,",",doc.Type,",",doc.Id)
 
-			// add doc "_routing"
+			// add doc "_routing" if exists
 			if _, ok := docI["_routing"]; ok {
 				str, ok := docI["_routing"].(string)
 				if ok && str != "" {

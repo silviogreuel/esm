@@ -25,7 +25,7 @@ type Document struct {
 	Type    string                 `json:"_type,omitempty"`
 	Id      string                 `json:"_id,omitempty"`
 	source  map[string]interface{} `json:"_source,omitempty"`
-	Routing string                 `json:"_routing,omitempty"`
+	Routing string                 `json:"routing,omitempty"` //after 6, only `routing` was supported
 }
 
 type Scroll struct {
