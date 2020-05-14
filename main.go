@@ -65,10 +65,20 @@ func main() {
 		showBar = false
 	}
 
-	if c.RepeatOutputTimes > 1 {
+	//至少输出一次
+	if c.RepeatOutputTimes < 1 {
+		c.RepeatOutputTimes=1
+	}else{
+		log.Info("source data will repeat send to target: ", c.RepeatOutputTimes, " times, the document id will be regenerated.")
+	}
+
+	if c.RepeatOutputTimes > 0 {
 
 		for i := 0; i <= c.RepeatOutputTimes; i++ {
-			fmt.Println("Round: ", i+1)
+
+			if c.RepeatOutputTimes>1 {
+				log.Info("repeat round: ", i+1)
+			}
 
 			// enough of a buffer to hold all the search results across all workers
 			migrator.DocChan = make(chan map[string]interface{}, c.DocBufferCount*c.Workers*10)
@@ -300,6 +310,7 @@ func main() {
 				if len(c.SourceEs) > 0 {
 					// get all indexes from source
 					indexNames, indexCount, sourceIndexMappings, err := migrator.SourceESAPI.GetIndexMappings(c.CopyAllIndexes, c.SourceIndexNames)
+
 					if err != nil {
 						log.Error(err)
 						return
