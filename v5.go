@@ -79,8 +79,7 @@ func (s *ESAPIV5) NewScroll(indexNames string,scrollTime string,docBufferCount i
 
                 if len(fields) > 0 {
                         if !strings.Contains(fields, ",") {
-                                log.Error("The fields shoud be seraprated by ,")
-                                return nil, errors.New("")
+                                queryBody["_source"] = fields
                         } else {
                                 queryBody["_source"] = strings.Split(fields, ",")
                         }

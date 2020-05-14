@@ -338,8 +338,7 @@ func (s *ESAPIV0) NewScroll(indexNames string, scrollTime string, docBufferCount
                 queryBody := map[string]interface{}{}
                 if len(fields) > 0 {
                         if !strings.Contains(fields, ",") {
-                                log.Error("The fields shoud be seraprated by ,")
-                                return
+                                queryBody["_source"] = fields
                         } else {
                                 queryBody["_source"] = strings.Split(fields, ",")
                         }
@@ -349,14 +348,14 @@ func (s *ESAPIV0) NewScroll(indexNames string, scrollTime string, docBufferCount
                         queryBody["query"] = map[string]interface{}{}
                         queryBody["query"].(map[string]interface{})["query_string"] = map[string]interface{}{}
                         queryBody["query"].(map[string]interface{})["query_string"].(map[string]interface{})["query"] = query
+                }
 
-                        jsonArray, err := json.Marshal(queryBody)
-                        if err != nil {
-                                log.Error(err)
+                jsonArray, err := json.Marshal(queryBody)
+                if err != nil {
+                        log.Error(err)
 
-                        } else {
-                                jsonBody = string(jsonArray)
-                        }
+                } else {
+                        jsonBody = string(jsonArray)
                 }
 
         }
@@ -372,7 +371,7 @@ func (s *ESAPIV0) NewScroll(indexNames string, scrollTime string, docBufferCount
                 return nil, errs[0]
         }
 
-        log.Trace("new scroll,",url, body)
+        log.Trace("new scroll,",url,", ",jsonBody,", ", body)
 
         if err != nil {
                 log.Error(err)

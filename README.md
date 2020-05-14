@@ -24,6 +24,17 @@ Elasticsearch cross version data migration.
 
 *  Generate testing data by randomize the source document id
 
+*  Support rename filed name
+
+*  Support unify document type name
+
+*  Support specify which _source fields to return from source
+
+*  Support specify query string query to filter the data source
+
+*  Support rename source fields while do bulk indexing
+
+
 
 ## Example:
 
@@ -100,6 +111,18 @@ generate testing data, if `input.json` contains 10 documents, the follow command
 ./bin/esm -i input.json -d  http://localhost:9201 -y target-index1  --regenerate_id  --repeat_times=10 
 ```
 
+select source fields
+
+```
+ ./bin/esm -s http://localhost:9201 -x my_index -o dump.json --fields=author,title
+```
+
+rename fields while do bulk indexing
+
+```
+./bin/esm -i dump.json -d  http://localhost:9201 -y target-index41  --rename=title:newtitle
+```
+
 ## Download
 https://github.com/medcl/elasticsearch-dump/releases
 
@@ -144,11 +167,7 @@ Application Options:
       --dest_proxy=                set proxy to target http connections, ie: http://127.0.0.1:8080
       --refresh                    refresh after migration finished
       --fields=                    output fields, comma separated, ie: col1,col2,col3,...
-      --rename=                    rename source fields, comma separated, ie: _type:type, name:myname
-  -l, --logstash_endpoint=         target logstash tcp endpoint, ie: 127.0.0.1:5055
-      --secured_logstash_endpoint  target logstash tcp endpoint was secured by TLS
-      --test_level=                target logstash tcp endpoint was secured by TLS
-      --test_environment=          target logstash tcp endpoint was secured by TLS
+      --rename=                    rename source fields while do bulk indexing, comma separated, ie: _type:type, name:myname
       --repeat_times=              repeat the data from source N times to dest output, use align with parameter regenerate_id to amplify the data size
   -r, --regenerate_id              regenerate id for documents, this will override the exist document id in data source
 
