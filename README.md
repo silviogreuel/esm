@@ -91,6 +91,10 @@ filter migration with range query
 
 ```
 
+generate testing data, if `input.json` contains 10 documents, the follow command will ingest 100 documents, good for testing
+```
+./bin/esm -i input.json -d  http://localhost:9201 -y target-index1  --regenerate_id  --repeat_times=10 
+```
 
 ## Download
 https://github.com/medcl/elasticsearch-dump/releases
@@ -141,6 +145,8 @@ Application Options:
       --secured_logstash_endpoint  target logstash tcp endpoint was secured by TLS
       --test_level=                target logstash tcp endpoint was secured by TLS
       --test_environment=          target logstash tcp endpoint was secured by TLS
+      --repeat_times=              repeat the data from source N times to dest output, use align with parameter regenerate_id to amplify the data size
+  -r, --regenerate_id              regenerate id for documents, this will override the exist document id in data source
 
 Help Options:
   -h, --help                       Show this help message
