@@ -93,7 +93,7 @@ func (s *ESAPIV7) NewScroll(indexNames string, scrollTime string, docBufferCount
 	}
 
 	scroll = &ScrollV7{}
-	err = json.Unmarshal([]byte(body), scroll)
+	err = DecodeJson(body, scroll)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -124,7 +124,7 @@ func (s *ESAPIV7) NextScroll(scrollTime string, scrollId string) (interface{}, e
 
 	// decode elasticsearch scroll response
 	scroll := &ScrollV7{}
-	err := json.Unmarshal([]byte(body), &scroll)
+	err := DecodeJson(body, &scroll)
 	if err != nil {
 		log.Error(body)
 		log.Error(err)
@@ -164,7 +164,7 @@ func (s *ESAPIV7) GetIndexMappings(copyAllIndexes bool, indexNames string) (stri
 	}
 
 	idxs := Indexes{}
-	er := json.Unmarshal([]byte(body), &idxs)
+	er := DecodeJson(body, &idxs)
 
 	if er != nil {
 		log.Error(body)

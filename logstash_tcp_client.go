@@ -28,7 +28,6 @@ import (
 	"github.com/paulbellamy/ratecounter"
 	"time"
 	"io/ioutil"
-	"encoding/json"
 	"github.com/infinitbyte/framework/core/util"
 )
 
@@ -92,10 +91,8 @@ func WriteToLogstash(c *Config)  {
 					log.Fatal(err)
 				}
 
-				//fmt.Println(string(b))
-
 				var arr []map[string]interface{}
-				_ = json.Unmarshal(b, &arr)
+				_ = DecodeJson(string(b), &arr)
 
 
 				for {

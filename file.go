@@ -53,9 +53,8 @@ func (m *Migrator) NewFileReadWorker(pb *pb.ProgressBar, wg *sync.WaitGroup)  {
 		lineCount += 1
 		js := map[string]interface{}{}
 
-		//log.Trace("reading file,",lineCount,",", line)
-		err = json.Unmarshal([]byte(line), &js)
-		if(err!=nil){
+		err = DecodeJson(line, &js)
+		if err!=nil {
 			log.Error(err)
 			continue
 		}

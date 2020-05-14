@@ -79,14 +79,9 @@ func (s *ESAPIV0) Bulk(data *bytes.Buffer) {
                 log.Error(err)
                 return
         }
-        //log.Trace(url,string(body))
-        //fmt.Println(string(body))
         response:=BulkResponse{}
-        json.Unmarshal([]byte(body), &response)
-        //v,_:=json.MarshalIndent(&response,""," ")
-        //fmt.Println(string(v))
+        err=DecodeJson(body, &response)
         if err == nil {
-        //        fmt.Println(response)
                 if response.Errors{
                         fmt.Println(body)
                 }
@@ -383,7 +378,7 @@ func (s *ESAPIV0) NewScroll(indexNames string, scrollTime string, docBufferCount
         }
 
         scroll = &Scroll{}
-        err = json.Unmarshal([]byte(body), scroll)
+        err = DecodeJson(body, scroll)
         if err != nil {
                 log.Error(err)
                 return nil, err
@@ -416,7 +411,7 @@ func (s *ESAPIV0) NextScroll(scrollTime string, scrollId string) (interface{}, e
 
         // decode elasticsearch scroll response
         scroll := &Scroll{}
-        err := json.Unmarshal([]byte(body), &scroll)
+        err := DecodeJson(body, &scroll)
         if err != nil {
                 log.Error(body)
                 log.Error(err)

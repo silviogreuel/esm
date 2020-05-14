@@ -17,6 +17,8 @@ limitations under the License.
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"github.com/parnurzeal/gorequest"
 	log "github.com/cihub/seelog"
@@ -26,6 +28,7 @@ import (
 	"bytes"
 	"net/url"
 	"crypto/tls"
+	"strings"
 )
 
 func Get(url string,auth *Auth,proxy string) (*http.Response, string, []error) {
@@ -183,4 +186,16 @@ func Request(method string,r string,auth *Auth,body *bytes.Buffer,proxy string)(
 	io.Copy(ioutil.Discard, resp.Body)
 	defer resp.Body.Close()
 	return string(respBody),nil
+}
+
+func DecodeJson(jsonStream string, o interface{})(error) {
+	decoder := json.NewDecoder(strings.NewReader(jsonStream))
+	// UseNumber causes the Decoder to unmarshal a number into an interface{} as a Number instead of as a float64.
+	decoder.UseNumber()
+
+	if err := decoder.Decode(o); err != nil {
+		fmt.Println("error:", err)
+		return err
+	}
+	return nil
 }
