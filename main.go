@@ -74,7 +74,7 @@ func main() {
 
 	if c.RepeatOutputTimes > 0 {
 
-		for i := 0; i <= c.RepeatOutputTimes; i++ {
+		for i := 0; i < c.RepeatOutputTimes; i++ {
 
 			if c.RepeatOutputTimes>1 {
 				log.Info("repeat round: ", i+1)
