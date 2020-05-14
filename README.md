@@ -20,6 +20,10 @@ Elasticsearch cross version data migration.
 
 *  Support sliced scroll ( elasticsearch 5.0 +)
 
+*  Support run in background
+
+*  Generate testing data by randomize the source document id
+
 
 ## Example:
 
