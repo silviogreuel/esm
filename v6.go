@@ -93,7 +93,7 @@ func (s *ESAPIV6) NewScroll(indexNames string, scrollTime string, docBufferCount
 		return nil, err
 	}
 
-	scroll = &ScrollV7{}
+	scroll = &Scroll{}
 	err = DecodeJson(body, scroll)
 	if err != nil {
 		log.Error(err)
@@ -124,7 +124,7 @@ func (s *ESAPIV6) NextScroll(scrollTime string, scrollId string) (interface{}, e
 	}
 
 	// decode elasticsearch scroll response
-	scroll := &ScrollV7{}
+	scroll := &Scroll{}
 	err := DecodeJson(body, &scroll)
 	if err != nil {
 		log.Error(body)
