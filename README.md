@@ -177,6 +177,15 @@ Help Options:
 
 ```
 
+## FAQ
+
+- Scroll ID too long, update `elasticsearch.yml` on source cluster.
+
+```
+http.max_header_size: 16k
+http.max_initial_line_length: 8k
+```
+
 Versions
 --------
 
