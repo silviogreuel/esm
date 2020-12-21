@@ -1,44 +1,55 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
-	"runtime"
-	"strings"
-	"sync"
-	"time"
-
-	"bufio"
-	"io"
-	"io/ioutil"
-	"os"
-
+	"github.com/cheggaaa/pb"
 	log "github.com/cihub/seelog"
 	goflags "github.com/jessevdk/go-flags"
 	"github.com/mattn/go-isatty"
-	"gopkg.in/cheggaaa/pb.v1"
+	"io"
+	"io/ioutil"
+	_ "net/http/pprof"
+	"os"
+	"runtime"
+	_ "runtime/pprof"
+	"strings"
+	"sync"
+	"time"
 )
 
 func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
+	//go func() {
+	//	//log.Infof("pprof listen at: http://%s/debug/pprof/", app.httpprof)
+	//	mux := http.NewServeMux()
+	//
+	//	// register pprof handler
+	//	mux.HandleFunc("/debug/pprof/", func(w http.ResponseWriter, r *http.Request) {
+	//		http.DefaultServeMux.ServeHTTP(w, r)
+	//	})
+	//
+	//	// register metrics handler
+	//	//mux.HandleFunc("/debug/vars", app.metricsHandler)
+	//
+	//	endpoint := http.ListenAndServe("0.0.0.0:6060", mux)
+	//	log.Debug("stop pprof server: %v", endpoint)
+	//}()
+
+	var err error
 	c := &Config{}
 	migrator := Migrator{}
 	migrator.Config = c
 
 	// parse args
-	_, err := goflags.Parse(c)
+	_, err = goflags.Parse(c)
 	if err != nil {
 		log.Error(err)
-		// if error, print it
-		fmt.Print(err)
 		return
 	}
-
-	//WriteToLogstash(c)
-
-	//return
 
 	setInitLogging(c.LogLevel)
 
@@ -81,7 +92,7 @@ func main() {
 			}
 
 			// enough of a buffer to hold all the search results across all workers
-			migrator.DocChan = make(chan map[string]interface{}, c.DocBufferCount*c.Workers*10)
+			migrator.DocChan = make(chan map[string]interface{}, c.BufferCount)
 
 			var srcESVersion *ClusterVersion
 			// create a progressbar and start a docCount
@@ -109,12 +120,14 @@ func main() {
 					log.Debug("source es is V7,", srcESVersion.Version.Number)
 					api := new(ESAPIV7)
 					api.Host = c.SourceEs
+					api.Compress=c.Compress
 					api.Auth = migrator.SourceAuth
 					api.HttpProxy = migrator.Config.SourceProxy
 					migrator.SourceESAPI = api
 				} else if strings.HasPrefix(srcESVersion.Version.Number, "6.") {
 					log.Debug("source es is V6,", srcESVersion.Version.Number)
 					api := new(ESAPIV6)
+					api.Compress=c.Compress
 					api.Host = c.SourceEs
 					api.Auth = migrator.SourceAuth
 					api.HttpProxy = migrator.Config.SourceProxy
@@ -123,6 +136,7 @@ func main() {
 					log.Debug("source es is V5,", srcESVersion.Version.Number)
 					api := new(ESAPIV5)
 					api.Host = c.SourceEs
+					api.Compress=c.Compress
 					api.Auth = migrator.SourceAuth
 					api.HttpProxy = migrator.Config.SourceProxy
 					migrator.SourceESAPI = api
@@ -130,6 +144,7 @@ func main() {
 					log.Debug("source es is not V5,", srcESVersion.Version.Number)
 					api := new(ESAPIV0)
 					api.Host = c.SourceEs
+					api.Compress=c.Compress
 					api.Auth = migrator.SourceAuth
 					api.HttpProxy = migrator.Config.SourceProxy
 					migrator.SourceESAPI = api
@@ -138,8 +153,6 @@ func main() {
 				if c.ScrollSliceSize < 1 {
 					c.ScrollSliceSize = 1
 				}
-
-				//fetchBar.ShowBar=false
 
 				totalSize := 0
 				finishedSlice := 0
@@ -497,7 +510,7 @@ func (c *Migrator) recoveryIndexSettings(sourceIndexRefreshSettings map[string]i
 	for name, interval := range sourceIndexRefreshSettings {
 		tempIndexSettings := getEmptyIndexSettings()
 		tempIndexSettings["settings"].(map[string]interface{})["index"].(map[string]interface{})["refresh_interval"] = interval
-		//tempIndexSettings["settings"].(map[string]interface{})["index"].(map[string]interface{})["number_of_replicas"] = 0
+		//tempIndexSettings["settings"].(map[string]interface{})["index"].(map[string]interface{})["number_of_replicas"] = 1
 		c.TargetESAPI.UpdateIndexSettings(name, tempIndexSettings)
 		if c.Config.Refresh {
 			c.TargetESAPI.Refresh(name)

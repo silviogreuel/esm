@@ -18,7 +18,7 @@ package main
 
 import (
 	"sync"
-	"gopkg.in/cheggaaa/pb.v1"
+	"github.com/cheggaaa/pb"
 	log "github.com/cihub/seelog"
 	"os"
 	"bufio"
@@ -92,7 +92,6 @@ func (c *Migrator) NewFileDumpWorker(pb *pb.ProgressBar, wg *sync.WaitGroup) {
 	READ_DOCS:
 	for {
 		docI, open := <-c.DocChan
-
 		// this check is in case the document is an error with scroll stuff
 		if status, ok := docI["status"]; ok {
 			if status.(int) == 404 {
@@ -104,8 +103,6 @@ func (c *Migrator) NewFileDumpWorker(pb *pb.ProgressBar, wg *sync.WaitGroup) {
 		// sanity check
 		for _, key := range []string{"_index", "_type", "_source", "_id"} {
 			if _, ok := docI[key]; !ok {
-				//json,_:=json.Marshal(docI)
-				//log.Errorf("failed parsing document: %v", string(json))
 				break READ_DOCS
 			}
 		}

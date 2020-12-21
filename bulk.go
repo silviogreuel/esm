@@ -19,13 +19,12 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/cheggaaa/pb"
 	"strings"
 	"sync"
 	"time"
 
 	log "github.com/cihub/seelog"
-	"github.com/infinitbyte/framework/core/util"
-	"gopkg.in/cheggaaa/pb.v1"
 )
 
 func (c *Migrator) NewBulkWorker(docCount *int, pb *pb.ProgressBar, wg *sync.WaitGroup) {
@@ -54,8 +53,6 @@ READ_DOCS:
 			// sanity check
 			for _, key := range []string{"_index", "_type", "_source", "_id"} {
 				if _, ok := docI[key]; !ok {
-					//json,_:=json.Marshal(docI)
-					//log.Errorf("failed parsing document: %v", string(json))
 					break READ_DOCS
 				}
 			}
@@ -81,12 +78,11 @@ READ_DOCS:
 			}
 
 			if c.Config.RegenerateID {
-				doc.Id = util.GetUUID()
+				doc.Id = ""
 			}
 
 			if c.Config.RenameFields != "" {
 				kvs := strings.Split(c.Config.RenameFields, ",")
-				//fmt.Println(kvs)
 				for _, i := range kvs {
 					fvs := strings.Split(i, ":")
 					oldField := strings.TrimSpace(fvs[0])
@@ -100,8 +96,6 @@ READ_DOCS:
 					}
 				}
 			}
-
-			//fmt.Println(doc.Index,",",doc.Type,",",doc.Id)
 
 			// add doc "_routing" if exists
 			if _, ok := docI["_routing"]; ok {
@@ -117,7 +111,7 @@ READ_DOCS:
 			}
 
 			// sanity check
-			if len(doc.Index) == 0 || len(doc.Id) == 0 || len(doc.Type) == 0 {
+			if len(doc.Index) == 0 || len(doc.Type) == 0 {
 				log.Errorf("failed decoding document: %+v", doc)
 				continue
 			}
@@ -159,7 +153,9 @@ READ_DOCS:
 		log.Trace("clean buffer, and execute bulk insert")
 		pb.Add(bulkItemSize)
 		bulkItemSize = 0
-
+		if c.Config.SleepSecondsAfterEachBulk >0{
+			time.Sleep(time.Duration(c.Config.SleepSecondsAfterEachBulk) * time.Second)
+		}
 	}
 WORKER_DONE:
 	if docBuf.Len() > 0 {

@@ -26,7 +26,7 @@ import (
 	"io/ioutil"
 	"strings"
 	"regexp"
-	"github.com/infinitbyte/framework/core/util"
+	"infini.sh/framework/core/util"
 )
 
 type ESAPIV6 struct {
@@ -36,7 +36,7 @@ type ESAPIV6 struct {
 func (s *ESAPIV6) NewScroll(indexNames string, scrollTime string, docBufferCount int, query string, slicedId, maxSlicedCount int, fields string) (scroll interface{}, err error) {
 	url := fmt.Sprintf("%s/%s/_search?scroll=%s&size=%d", s.Host, indexNames, scrollTime, docBufferCount)
 
-	jsonBody := ""
+	var jsonBody []byte
 	if len(query) > 0 || maxSlicedCount > 0 || len(fields) > 0 {
 		queryBody := map[string]interface{}{}
 
@@ -61,33 +61,14 @@ func (s *ESAPIV6) NewScroll(indexNames string, scrollTime string, docBufferCount
 			queryBody["slice"].(map[string]interface{})["max"] = maxSlicedCount
 		}
 
-		jsonArray, err := json.Marshal(queryBody)
+		jsonBody, err = json.Marshal(queryBody)
 		if err != nil {
 			log.Error(err)
 
-		} else {
-			jsonBody = string(jsonArray)
 		}
 	}
 
-	resp, body, errs := Post(url, s.Auth, jsonBody, s.HttpProxy)
-
-	if resp != nil && resp.Body != nil {
-		io.Copy(ioutil.Discard, resp.Body)
-		defer resp.Body.Close()
-	}
-
-	if errs != nil {
-		log.Error(errs)
-		return nil, errs[0]
-	}
-
-	if resp.StatusCode != 200 {
-		return nil, errors.New(body)
-	}
-
-	log.Trace("new scroll,", body)
-
+	body, err := DoRequest(s.Compress,"POST",url, s.Auth,jsonBody,s.HttpProxy)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -107,27 +88,12 @@ func (s *ESAPIV6) NextScroll(scrollTime string, scrollId string) (interface{}, e
 	id := bytes.NewBufferString(scrollId)
 
 	url := fmt.Sprintf("%s/_search/scroll?scroll=%s&scroll_id=%s", s.Host, scrollTime, id)
-	resp, body, errs := Get(url, s.Auth, s.HttpProxy)
-
-	if resp != nil && resp.Body != nil {
-		io.Copy(ioutil.Discard, resp.Body)
-		defer resp.Body.Close()
-	}
-
-	if errs != nil {
-		log.Error(errs)
-		return nil, errs[0]
-	}
-
-	if resp.StatusCode != 200 {
-		return nil, errors.New(body)
-	}
+	body,err:=DoRequest(s.Compress,"GET",url,s.Auth,nil,s.HttpProxy)
 
 	// decode elasticsearch scroll response
 	scroll := &Scroll{}
-	err := DecodeJson(body, &scroll)
+	err = DecodeJson(body, &scroll)
 	if err != nil {
-		log.Error(body)
 		log.Error(err)
 		return nil, err
 	}
@@ -202,7 +168,6 @@ func (s *ESAPIV6) GetIndexMappings(copyAllIndexes bool, indexNames string) (stri
 	// wrap in mappings if moving from super old es
 	for name, idx := range idxs {
 		i++
-		fmt.Println(name)
 		if _, ok := idx.(map[string]interface{})["mappings"]; !ok {
 			(idxs)[name] = map[string]interface{}{
 				"mappings": idx,

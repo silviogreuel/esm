@@ -31,7 +31,7 @@ func setInitLogging(logLevel string) {
 	testConfig = testConfig + `">
 		<outputs formatid="main">
 			<filter levels="error">
-				<file path="./log/gopa.log"/>
+				<file path="./esm.log"/>
 			</filter>
 			<console formatid="main" />
 		</outputs>

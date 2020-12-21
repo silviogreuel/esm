@@ -2,38 +2,39 @@
 
 Elasticsearch cross version data migration.
 
+[Dec 3rd, 2020: [EN] Cross version Elasticsearch data migration with ESM](https://discuss.elastic.co/t/dec-3rd-2020-en-cross-version-elasticsearch-data-migration-with-esm/256516)
+
 ## Features:
 
 *  Cross version migration supported
-
 *  Overwrite index name
-
 *  Copy index settings and mapping
-
 *  Support http basic auth
-
 *  Support dump index to local file
-
 *  Support loading index from local file
-
 *  Support http proxy
-
 *  Support sliced scroll ( elasticsearch 5.0 +)
-
 *  Support run in background
-
 *  Generate testing data by randomize the source document id
-
 *  Support rename filed name
-
 *  Support unify document type name
-
 *  Support specify which _source fields to return from source
-
 *  Support specify query string query to filter the data source
-
 *  Support rename source fields while do bulk indexing
+*  Load generating with 
 
+## ESM is fast!
+
+A 3 nodes cluster(3 * c5d.4xlarge， 16C，32GB，10Gbps)
+
+```
+root@ip-172-31-13-181:/tmp# ./esm -s https://localhost:8000 -d https://localhost:8000 -x logs1kw -y logs122 -m elastic:medcl123 -n elastic:medcl123 -w 40 --sliced_scroll_size=60 -b 5 --buffer_count=2000000  --regenerate_id
+[12-19 06:31:20] [INF] [main.go:506,main] start data migration..
+Scroll 10064570 / 10064570 [=================================================] 100.00% 55s
+Bulk 10062602 / 10064570 [==================================================]  99.98% 55s
+[12-19 06:32:15] [INF] [main.go:537,main] data migration finished.
+```
+Migrated 10,000,000 documents within a minute, Nginx log generated from kibana_sample_data_logs.
 
 
 ## Example:
@@ -123,8 +124,13 @@ rename fields while do bulk indexing
 ./bin/esm -i dump.json -d  http://localhost:9201 -y target-index41  --rename=title:newtitle
 ```
 
+user buffer_count to control memory used by ESM， and use gzip to compress network traffic
+```
+./esm -s https://localhost:8000 -d https://localhost:8000 -x logs1kw -y logs122 -m elastic:medcl123 -n elastic:medcl123 --regenerate_id -w 20 --sliced_scroll_size=60 -b 5 --buffer_count=1000000 --compress false 
+```
+
 ## Download
-https://github.com/medcl/elasticsearch-dump/releases
+https://github.com/medcl/esm/releases
 
 
 ## Compile:
@@ -146,6 +152,7 @@ Application Options:
   -m, --source_auth=               basic auth of source elasticsearch instance, ie: user:pass
   -n, --dest_auth=                 basic auth of target elasticsearch instance, ie: user:pass
   -c, --count=                     number of documents at a time: ie "size" in the scroll request (10000)
+      --buffer_count=              number of buffered documents in memory (100000)
   -w, --workers=                   concurrency number for bulk workers (1)
   -b, --bulk_size=                 bulk size in MB (5)
   -t, --time=                      scroll time (1m)
@@ -166,10 +173,14 @@ Application Options:
       --source_proxy=              set proxy to source http connections, ie: http://127.0.0.1:8080
       --dest_proxy=                set proxy to target http connections, ie: http://127.0.0.1:8080
       --refresh                    refresh after migration finished
-      --fields=                    output fields, comma separated, ie: col1,col2,col3,...
-      --rename=                    rename source fields while do bulk indexing, comma separated, ie: _type:type, name:myname
+      --fields=                    filter source fields, comma separated, ie: col1,col2,col3,...
+      --rename=                    rename source fields, comma separated, ie: _type:type, name:myname
+  -l, --logstash_endpoint=         target logstash tcp endpoint, ie: 127.0.0.1:5055
+      --secured_logstash_endpoint  target logstash tcp endpoint was secured by TLS
       --repeat_times=              repeat the data from source N times to dest output, use align with parameter regenerate_id to amplify the data size
   -r, --regenerate_id              regenerate id for documents, this will override the exist document id in data source
+      --compress                   use gzip to compress traffic
+  -p, --sleep=                     sleep N seconds after finished a bulk request (-1)
 
 Help Options:
   -h, --help                       Show this help message
@@ -193,27 +204,27 @@ From       | To
 -----------|-----------
 1.x | 1.x
 1.x | 2.x
-1.x | 5.0
-1.x | 6.0
-1.x | 7.0
+1.x | 5.x
+1.x | 6.x
+1.x | 7.x
 2.x | 1.x
 2.x | 2.x
-2.x | 5.0
-2.x | 6.0
-2.x | 7.0
-5.0 | 1.x
-5.0 | 2.x
-5.0 | 5.0
+2.x | 5.x
+2.x | 6.x
+2.x | 7.x
+5.x | 1.x
+5.x | 2.x
+5.x | 5.x
 5.x | 6.x
 5.x | 7.x
-6.0 | 1.x
-6.0 | 2.x
-6.0 | 5.0
+6.x | 1.x
+6.x | 2.x
+6.x | 5.0
 6.x | 6.x
 6.x | 7.x
-7.0 | 1.x
-7.0 | 2.x
-7.0 | 5.0
+7.x | 1.x
+7.x | 2.x
+7.x | 5.x
 7.x | 6.x
 7.x | 7.x
 

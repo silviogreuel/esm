@@ -21,9 +21,9 @@ import (
         "encoding/json"
         "errors"
         "fmt"
+        log "github.com/cihub/seelog"
         "io"
         "io/ioutil"
-        log "github.com/cihub/seelog"
         "regexp"
         "strings"
 )
@@ -32,7 +32,9 @@ type ESAPIV0 struct {
         Host      string //eg: http://localhost:9200
         Auth      *Auth  //eg: user:pass
         HttpProxy string //eg: http://proxyIp:proxyPort
+        Compress bool
 }
+
 
 func (s *ESAPIV0) ClusterHealth() *ClusterHealth {
 
@@ -69,13 +71,9 @@ func (s *ESAPIV0) Bulk(data *bytes.Buffer) {
         data.WriteRune('\n')
         url := fmt.Sprintf("%s/_bulk", s.Host)
 
-        log.Trace(url)
-        log.Trace(data.String())
-
-        body,err:=Request("POST",url,s.Auth,data,s.HttpProxy)
+        body,err:=DoRequest(s.Compress,"POST",url,s.Auth,data.Bytes(),s.HttpProxy)
 
         if err != nil {
-                fmt.Println(err)
                 log.Error(err)
                 return
         }
@@ -328,7 +326,7 @@ func (s *ESAPIV0) NewScroll(indexNames string, scrollTime string, docBufferCount
         // curl -XGET 'http://es-0.9:9200/_search?search_type=scan&scroll=10m&size=50'
         url := fmt.Sprintf("%s/%s/_search?search_type=scan&scroll=%s&size=%d", s.Host, indexNames, scrollTime, docBufferCount)
 
-        jsonBody:=""
+        var jsonBody []byte
         if len(query) > 0 || len(fields) > 0 {
                 queryBody := map[string]interface{}{}
                 if len(fields) > 0 {
@@ -345,36 +343,18 @@ func (s *ESAPIV0) NewScroll(indexNames string, scrollTime string, docBufferCount
                         queryBody["query"].(map[string]interface{})["query_string"].(map[string]interface{})["query"] = query
                 }
 
-                jsonArray, err := json.Marshal(queryBody)
+                jsonBody, err = json.Marshal(queryBody)
                 if err != nil {
                         log.Error(err)
-
-                } else {
-                        jsonBody = string(jsonArray)
+                        return nil, err
                 }
 
         }
-        resp, body, errs := Post(url, s.Auth,jsonBody,s.HttpProxy)
-
-        if resp!=nil&& resp.Body!=nil{
-                io.Copy(ioutil.Discard, resp.Body)
-                defer resp.Body.Close()
-        }
-
-        if err != nil {
-                log.Error(errs)
-                return nil, errs[0]
-        }
-
-        log.Trace("new scroll,",url,", ",jsonBody,", ", body)
-
+        //resp, body, errs := Post(url, s.Auth,jsonBody,s.HttpProxy)
+        body, err := DoRequest(s.Compress,"POST",url, s.Auth,jsonBody,s.HttpProxy)
         if err != nil {
                 log.Error(err)
                 return nil, err
-        }
-
-        if resp.StatusCode != 200 {
-                return nil, errors.New(body)
         }
 
         scroll = &Scroll{}
@@ -391,29 +371,17 @@ func (s *ESAPIV0) NextScroll(scrollTime string, scrollId string) (interface{}, e
         //  curl -XGET 'http://es-0.9:9200/_search/scroll?scroll=5m'
         id := bytes.NewBufferString(scrollId)
         url := fmt.Sprintf("%s/_search/scroll?scroll=%s&scroll_id=%s", s.Host, scrollTime, id)
-        resp, body, errs := Get(url, s.Auth,s.HttpProxy)
+        body,err:=DoRequest(s.Compress,"GET",url,s.Auth,nil,s.HttpProxy)
 
-        if resp!=nil&& resp.Body!=nil{
-                io.Copy(ioutil.Discard, resp.Body)
-                defer resp.Body.Close()
+        if err != nil {
+                log.Error(err)
+                return nil, err
         }
-
-        if errs != nil {
-                log.Error(errs)
-                return nil, errs[0]
-        }
-
-        if resp.StatusCode != 200 {
-                return nil, errors.New(body)
-        }
-
-        log.Trace("next scroll,",url,body)
 
         // decode elasticsearch scroll response
         scroll := &Scroll{}
-        err := DecodeJson(body, &scroll)
+        err = DecodeJson(body, &scroll)
         if err != nil {
-                log.Error(body)
                 log.Error(err)
                 return nil, err
         }

@@ -17,8 +17,8 @@ limitations under the License.
 package main
 
 import (
-	"gopkg.in/cheggaaa/pb.v1"
 	"encoding/json"
+	"github.com/cheggaaa/pb"
 	log "github.com/cihub/seelog"
 )
 
@@ -33,7 +33,6 @@ type ScrollAPI interface{
 
 
 func (scroll *Scroll) GetHitsTotal()int{
-	//fmt.Println("total v0:",scroll.Hits.Total)
 	return scroll.Hits.Total
 }
 
@@ -42,15 +41,10 @@ func (scroll *Scroll) GetScrollId()string{
 }
 
 func (scroll *Scroll) GetDocs()[]interface{}{
-
-	//fmt.Println("docs v0:",scroll.Hits)
-
 	return scroll.Hits.Docs
 }
 
 func (scroll *ScrollV7) GetHitsTotal()int{
-	//fmt.Println("total v7:",scroll.Hits.Total.Value)
-
 	return scroll.Hits.Total.Value
 }
 
@@ -60,9 +54,6 @@ func (scroll *ScrollV7) GetScrollId()string{
 }
 
 func (scroll *ScrollV7) GetDocs()[]interface{}{
-
-	//fmt.Println("docs v7:",scroll.Hits)
-
 	return scroll.Hits.Docs
 }
 
@@ -82,7 +73,6 @@ func (s *Scroll) ProcessScrollResult(c *Migrator, bar *pb.ProgressBar){
 
 	// write all the docs into a channel
 	for _, docI := range s.Hits.Docs {
-		//fmt.Println(docI)
 		c.DocChan <- docI.(map[string]interface{})
 	}
 }
@@ -109,8 +99,6 @@ func (s *Scroll) Next(c *Migrator, bar *pb.ProgressBar) (done bool) {
 	return
 }
 
-
-
 // Stream from source es instance. "done" is an indicator that the stream is
 // over
 func (s *ScrollV7) ProcessScrollResult(c *Migrator, bar *pb.ProgressBar){
@@ -126,7 +114,6 @@ func (s *ScrollV7) ProcessScrollResult(c *Migrator, bar *pb.ProgressBar){
 
 	// write all the docs into a channel
 	for _, docI := range s.Hits.Docs {
-		//fmt.Println(docI)
 		c.DocChan <- docI.(map[string]interface{})
 	}
 }

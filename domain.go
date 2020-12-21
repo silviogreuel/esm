@@ -111,9 +111,10 @@ type Config struct {
 	SourceEsAuthStr     string `short:"m" long:"source_auth"  description:"basic auth of source elasticsearch instance, ie: user:pass"`
 	TargetEsAuthStr     string `short:"n" long:"dest_auth"  description:"basic auth of target elasticsearch instance, ie: user:pass"`
 	DocBufferCount      int    `short:"c" long:"count"   description:"number of documents at a time: ie \"size\" in the scroll request" default:"10000"`
+	BufferCount      int    `long:"buffer_count"   description:"number of buffered documents in memory" default:"1000000"`
 	Workers             int    `short:"w" long:"workers" description:"concurrency number for bulk workers" default:"1"`
 	BulkSizeInMB        int    `short:"b" long:"bulk_size" description:"bulk size in MB" default:"5"`
-	ScrollTime          string `short:"t" long:"time"    description:"scroll time" default:"1m"`
+	ScrollTime          string `short:"t" long:"time"    description:"scroll time" default:"10m"`
 	ScrollSliceSize     int    `long:"sliced_scroll_size"    description:"size of sliced scroll, to make it work, the size should be > 1" default:"1"`
 	RecreateIndex       bool   `short:"f" long:"force"   description:"delete destination index before copying"`
 	CopyAllIndexes      bool   `short:"a" long:"all"     description:"copy indexes starting with . and _"`
@@ -135,11 +136,11 @@ type Config struct {
 	RenameFields        string `long:"rename"                 description:"rename source fields, comma separated, ie: _type:type, name:myname" `
 	LogstashEndpoint    string `short:"l"  long:"logstash_endpoint"    description:"target logstash tcp endpoint, ie: 127.0.0.1:5055" `
 	LogstashSecEndpoint bool   `long:"secured_logstash_endpoint"    description:"target logstash tcp endpoint was secured by TLS" `
-	//TestLevel  			string `long:"test_level"    description:"target logstash tcp endpoint was secured by TLS" `
-	//TestEnvironment  string `long:"test_environment"    description:"target logstash tcp endpoint was secured by TLS" `
 
-	RepeatOutputTimes int  `long:"repeat_times"            description:"repeat the data from source N times to dest output, use align with parameter regenerate_id to amplify the data size "`
-	RegenerateID      bool `short:"r" long:"regenerate_id"   description:"regenerate id for documents, this will override the exist document id in data source"`
+	RepeatOutputTimes         int  `long:"repeat_times"            description:"repeat the data from source N times to dest output, use align with parameter regenerate_id to amplify the data size "`
+	RegenerateID              bool `short:"r" long:"regenerate_id"   description:"regenerate id for documents, this will override the exist document id in data source"`
+	Compress                  bool `long:"compress"            description:"use gzip to compress traffic"`
+	SleepSecondsAfterEachBulk int  `short:"p" long:"sleep" description:"sleep N seconds after each bulk request" default:"-1"`
 }
 
 type Auth struct {

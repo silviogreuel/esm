@@ -17,25 +17,34 @@ limitations under the License.
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"github.com/parnurzeal/gorequest"
-	log "github.com/cihub/seelog"
-	"io/ioutil"
-	"io"
-	"errors"
 	"bytes"
-	"net/url"
 	"crypto/tls"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"fmt"
+	log "github.com/cihub/seelog"
+	"github.com/parnurzeal/gorequest"
+	"infini.sh/framework/lib/fasthttp"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 	"strings"
 )
+
+func BasicAuth(req *fasthttp.Request,user,pass string) {
+	msg := fmt.Sprintf("%s:%s",user,pass)
+	encoded := base64.StdEncoding.EncodeToString([]byte(msg))
+	req.Header.Add("Authorization", "Basic "+encoded)
+}
 
 func Get(url string,auth *Auth,proxy string) (*http.Response, string, []error) {
 	request := gorequest.New()
 
 	tr := &http.Transport{
 		DisableKeepAlives: true,
+		DisableCompression: false,
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	request.Transport=tr
@@ -46,7 +55,6 @@ func Get(url string,auth *Auth,proxy string) (*http.Response, string, []error) {
 	}
 
 	request.Header["Content-Type"]= "application/json"
-	//request.Header.Set("Content-Type", "application/json")
 
 	if(len(proxy)>0){
 		request.Proxy(proxy)
@@ -61,6 +69,7 @@ func Post(url string,auth *Auth, body string,proxy string)(*http.Response, strin
 	request := gorequest.New()
 	tr := &http.Transport{
 		DisableKeepAlives: true,
+		DisableCompression: false,
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	request.Transport=tr
@@ -69,7 +78,6 @@ func Post(url string,auth *Auth, body string,proxy string)(*http.Response, strin
 		request.SetBasicAuth(auth.User,auth.Pass)
 	}
 
-	//request.Header.Set("Content-Type", "application/json")
 	request.Header["Content-Type"]="application/json"
 	
 	if(len(proxy)>0){
@@ -109,32 +117,117 @@ func newDeleteRequest(client *http.Client,method, urlStr string) (*http.Request,
 	return req, nil
 }
 
-func Request(method string,r string,auth *Auth,body *bytes.Buffer,proxy string)(string,error)  {
+//
+//func GzipHandler(req *http.Request) {
+//	var b bytes.Buffer
+//	var buf bytes.Buffer
+//	g := gzip.NewWriter(&buf)
+//
+//	_, err := io.Copy(g, &b)
+//	if err != nil {
+//		panic(err)
+//		//slog.Error(err)
+//		return
+//	}
+//}
 
-	//TODO use global client
-	var client *http.Client
-	client = &http.Client{}
-	if(len(proxy)>0){
-		proxyURL, err := url.Parse(proxy)
-		if(err!=nil){
-			log.Error(err)
-		}else{
-			transport := &http.Transport{
-				Proxy: http.ProxyURL(proxyURL),
-				DisableKeepAlives: true,
+var client *http.Client=&http.Client{
+	Transport: &http.Transport{
+		DisableKeepAlives: true,
+		DisableCompression: false,
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	},
+}
+var fastHttpClient = &fasthttp.Client{
+	TLSConfig: &tls.Config{InsecureSkipVerify: true},
+}
+
+func DoRequest(compress bool,method string,loadUrl string,auth *Auth,body []byte,proxy string) (string,error)  {
+
+	req := fasthttp.AcquireRequest()
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(req)   // <- do not forget to release
+	defer fasthttp.ReleaseResponse(resp) // <- do not forget to release
+
+	req.SetRequestURI(loadUrl)
+	req.Header.SetMethod(method)
+
+	req.Header.Set("Content-Type", "application/json")
+
+
+	if auth!=nil{
+		req.URI().SetUsername(auth.User)
+		req.URI().SetPassword(auth.Pass)
+	}
+
+	if len(body)>0{
+		if compress{
+			_, err := fasthttp.WriteGzipLevel(req.BodyWriter(), body, fasthttp.CompressBestSpeed)
+			if err != nil {
+				panic(err)
 			}
-			client = &http.Client{Transport: transport}
+		}else{
+			req.SetBody(body)
+
 		}
 	}
 
-	tr := &http.Transport{
-		DisableKeepAlives: true,
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-	},
+	err:=fastHttpClient.Do(req, resp)
+
+	if err != nil {
+			panic(err)
+	}
+	if resp == nil {
+		panic("empty response")
 	}
 
-	client.Transport=tr
+	if resp.StatusCode() == http.StatusOK || resp.StatusCode() == http.StatusCreated {
+
+	} else {
+		//fmt.Println("received status code", resp.StatusCode, "from", string(resp.Header.Header()), "content", string(resp.Body()), req)
+	}
+
+
+
+	//if compress{
+	//	data,err:= resp.BodyGunzip()
+	//	return string(data),err
+	//}
+
+	return string(resp.Body()),nil
+}
+
+
+func Request(method string,r string,auth *Auth,body *bytes.Buffer,proxy string)(string,error)  {
+
+	//TODO use global client
+	//client = &http.Client{}
+	//
+	//if(len(proxy)>0){
+	//	proxyURL, err := url.Parse(proxy)
+	//	if(err!=nil){
+	//		log.Error(err)
+	//	}else{
+	//		transport := &http.Transport{
+	//			Proxy: http.ProxyURL(proxyURL),
+	//			DisableKeepAlives: true,
+	//			DisableCompression: false,
+	//		}
+	//		client = &http.Client{Transport: transport}
+	//	}
+	//}
+	//
+	//tr := &http.Transport{
+	//	DisableKeepAlives: true,
+	//	DisableCompression: false,
+	//	TLSClientConfig: &tls.Config{
+	//		InsecureSkipVerify: true,
+	//},
+	//}
+	//
+	//client.Transport=tr
 
 	var err error
 	var reqest *http.Request
@@ -154,6 +247,10 @@ func Request(method string,r string,auth *Auth,body *bytes.Buffer,proxy string)(
 
 	reqest.Header.Set("Content-Type", "application/json")
 
+	//enable gzip
+	//reqest.Header.Set("Content-Encoding", "gzip")
+	//GzipHandler(reqest)
+	//
 
 	resp,errs := client.Do(reqest)
 	if errs != nil {
@@ -178,8 +275,6 @@ func Request(method string,r string,auth *Auth,body *bytes.Buffer,proxy string)(
 		return string(respBody),err
 	}
 
-	log.Trace(r,string(respBody))
-
 	if err != nil {
 		return string(respBody),err
 	}
@@ -190,6 +285,18 @@ func Request(method string,r string,auth *Auth,body *bytes.Buffer,proxy string)(
 
 func DecodeJson(jsonStream string, o interface{})(error) {
 	decoder := json.NewDecoder(strings.NewReader(jsonStream))
+	// UseNumber causes the Decoder to unmarshal a number into an interface{} as a Number instead of as a float64.
+	decoder.UseNumber()
+
+	if err := decoder.Decode(o); err != nil {
+		fmt.Println("error:", err)
+		return err
+	}
+	return nil
+}
+
+func DecodeJsonBytes(jsonStream []byte, o interface{})(error) {
+	decoder := json.NewDecoder(bytes.NewReader(jsonStream))
 	// UseNumber causes the Decoder to unmarshal a number into an interface{} as a Number instead of as a float64.
 	decoder.UseNumber()
 

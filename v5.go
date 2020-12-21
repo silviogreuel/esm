@@ -18,12 +18,9 @@ package main
 
 import (
         "bytes"
-        log "github.com/cihub/seelog"
         "encoding/json"
         "fmt"
-        "errors"
-        "io"
-        "io/ioutil"
+        log "github.com/cihub/seelog"
         "strings"
 )
 
@@ -72,7 +69,7 @@ func (s *ESAPIV5) Refresh(name string) (err error) {
 func (s *ESAPIV5) NewScroll(indexNames string,scrollTime string,docBufferCount int,query string, slicedId,maxSlicedCount int, fields string)(scroll interface{}, err error){
         url := fmt.Sprintf("%s/%s/_search?scroll=%s&size=%d", s.Host, indexNames, scrollTime,docBufferCount)
 
-        jsonBody:=""
+        var jsonBody []byte
         if(len(query)>0||maxSlicedCount>0||len(fields)>0) {
                 queryBody := map[string]interface{}{}
 
@@ -98,36 +95,16 @@ func (s *ESAPIV5) NewScroll(indexNames string,scrollTime string,docBufferCount i
                         queryBody["slice"].(map[string]interface{})["max"]= maxSlicedCount
                 }
 
-                jsonArray, err := json.Marshal(queryBody)
-                if (err != nil) {
+                jsonBody, err = json.Marshal(queryBody)
+                if err != nil {
                         log.Error(err)
-
-                }else{
-                        jsonBody=string(jsonArray)
                 }
         }
 
-        resp, body, errs := Post(url, s.Auth,jsonBody,s.HttpProxy)
-
-        if resp!=nil&& resp.Body!=nil{
-                io.Copy(ioutil.Discard, resp.Body)
-                defer resp.Body.Close()
-        }
-
-        if errs != nil {
-                log.Error(errs)
-                return nil,errs[0]
-        }
-
-        if resp.StatusCode != 200 {
-                return nil,errors.New(body)
-        }
-
-        log.Trace("new scroll,",body)
-
+        body, err := DoRequest(s.Compress,"POST",url, s.Auth,jsonBody,s.HttpProxy)
         if err != nil {
                 log.Error(err)
-                return nil,err
+                return nil, err
         }
 
         scroll = &Scroll{}
@@ -144,27 +121,13 @@ func (s *ESAPIV5) NextScroll(scrollTime string,scrollId string)(interface{},erro
         id := bytes.NewBufferString(scrollId)
 
         url:=fmt.Sprintf("%s/_search/scroll?scroll=%s&scroll_id=%s", s.Host, scrollTime, id)
-        resp,body, errs := Get(url,s.Auth,s.HttpProxy)
 
-        if resp!=nil&& resp.Body!=nil{
-                io.Copy(ioutil.Discard, resp.Body)
-                defer resp.Body.Close()
-        }
-
-        if errs != nil {
-                log.Error(errs)
-                return nil,errs[0]
-        }
-
-        if resp.StatusCode != 200 {
-                return nil,errors.New(body)
-        }
+        body,err:=DoRequest(s.Compress,"GET",url,s.Auth,nil,s.HttpProxy)
 
         // decode elasticsearch scroll response
         scroll := &Scroll{}
-        err:= DecodeJson(body, &scroll)
+        err= DecodeJson(body, &scroll)
         if err != nil {
-                log.Error(body)
                 log.Error(err)
                 return nil,err
         }

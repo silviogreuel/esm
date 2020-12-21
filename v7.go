@@ -106,27 +106,16 @@ func (s *ESAPIV7) NextScroll(scrollTime string, scrollId string) (interface{}, e
 	id := bytes.NewBufferString(scrollId)
 
 	url := fmt.Sprintf("%s/_search/scroll?scroll=%s&scroll_id=%s", s.Host, scrollTime, id)
-	resp, body, errs := Get(url, s.Auth, s.HttpProxy)
+	body,err:=DoRequest(s.Compress,"GET",url,s.Auth,nil,s.HttpProxy)
 
-	if resp != nil && resp.Body != nil {
-		io.Copy(ioutil.Discard, resp.Body)
-		defer resp.Body.Close()
+	if err != nil {
+		//log.Error(errs)
+		return nil, err
 	}
-
-	if errs != nil {
-		log.Error(errs)
-		return nil, errs[0]
-	}
-
-	if resp.StatusCode != 200 {
-		return nil, errors.New(body)
-	}
-
 	// decode elasticsearch scroll response
 	scroll := &ScrollV7{}
-	err := DecodeJson(body, &scroll)
+	err = DecodeJson(body, &scroll)
 	if err != nil {
-		log.Error(body)
 		log.Error(err)
 		return nil, err
 	}
