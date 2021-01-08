@@ -65,7 +65,7 @@ func (s *ESAPIV0) ClusterHealth() *ClusterHealth {
 
 func (s *ESAPIV0) Bulk(data *bytes.Buffer) {
         if data == nil || data.Len() == 0 {
-                log.Warn("data is empty, skip")
+                log.Trace("data is empty, skip")
                 return
         }
         data.WriteRune('\n')
