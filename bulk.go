@@ -36,8 +36,19 @@ func (c *Migrator) NewBulkWorker(docCount *int, pb *pb.ProgressBar, wg *sync.Wai
 	docBuf := bytes.Buffer{}
 	docEnc := json.NewEncoder(&docBuf)
 
+	idleDuration := 5 * time.Second
+	idleTimeout := time.NewTimer(idleDuration)
+	defer idleTimeout.Stop()
+
+	taskTimeOutDuration := 5 * time.Minute
+	taskTimeout := time.NewTimer(taskTimeOutDuration)
+	defer taskTimeout.Stop()
+
+
 READ_DOCS:
 	for {
+		idleTimeout.Reset(idleDuration)
+		taskTimeout.Reset(taskTimeOutDuration)
 		select {
 		case docI, open := <-c.DocChan:
 			var err error
@@ -138,10 +149,10 @@ READ_DOCS:
 			bulkItemSize++
 			docBuf.Reset()
 			(*docCount)++
-		case <-time.After(time.Second * 5):
+		case <-idleTimeout.C:
 			log.Debug("5s no message input")
 			goto CLEAN_BUFFER
-		case <-time.After(time.Minute * 5):
+		case <-taskTimeout.C:
 			log.Warn("5m no message input, close worker")
 			goto WORKER_DONE
 		}

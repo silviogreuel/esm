@@ -10,6 +10,7 @@ import (
 	"github.com/mattn/go-isatty"
 	"io"
 	"io/ioutil"
+	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"runtime"
@@ -23,21 +24,21 @@ func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	//go func() {
-	//	//log.Infof("pprof listen at: http://%s/debug/pprof/", app.httpprof)
-	//	mux := http.NewServeMux()
-	//
-	//	// register pprof handler
-	//	mux.HandleFunc("/debug/pprof/", func(w http.ResponseWriter, r *http.Request) {
-	//		http.DefaultServeMux.ServeHTTP(w, r)
-	//	})
-	//
-	//	// register metrics handler
-	//	//mux.HandleFunc("/debug/vars", app.metricsHandler)
-	//
-	//	endpoint := http.ListenAndServe("0.0.0.0:6060", mux)
-	//	log.Debug("stop pprof server: %v", endpoint)
-	//}()
+	go func() {
+		//log.Infof("pprof listen at: http://%s/debug/pprof/", app.httpprof)
+		mux := http.NewServeMux()
+
+		// register pprof handler
+		mux.HandleFunc("/debug/pprof/", func(w http.ResponseWriter, r *http.Request) {
+			http.DefaultServeMux.ServeHTTP(w, r)
+		})
+
+		// register metrics handler
+		//mux.HandleFunc("/debug/vars", app.metricsHandler)
+
+		endpoint := http.ListenAndServe("0.0.0.0:6060", mux)
+		log.Debug("stop pprof server: %v", endpoint)
+	}()
 
 	var err error
 	c := &Config{}
@@ -298,9 +299,12 @@ func main() {
 				}
 
 				// wait for cluster state to be okay before moving
-				timer := time.NewTimer(time.Second * 3)
-
+				idleDuration := 3 * time.Second
+				timer := time.NewTimer(idleDuration)
+				defer timer.Stop()
 				for {
+					timer.Reset(idleDuration)
+
 					if len(c.SourceEs) > 0 {
 						if status, ready := migrator.ClusterReady(migrator.SourceESAPI); !ready {
 							log.Infof("%s at %s is %s, delaying migration ", status.Name, c.SourceEs, status.Status)
@@ -316,7 +320,6 @@ func main() {
 							continue
 						}
 					}
-					timer.Stop()
 					break
 				}
 

@@ -284,9 +284,12 @@ func Request(method string,r string,auth *Auth,body *bytes.Buffer,proxy string)(
 }
 
 func DecodeJson(jsonStream string, o interface{})(error) {
+
+
 	decoder := json.NewDecoder(strings.NewReader(jsonStream))
 	// UseNumber causes the Decoder to unmarshal a number into an interface{} as a Number instead of as a float64.
 	decoder.UseNumber()
+	decoder.
 
 	if err := decoder.Decode(o); err != nil {
 		fmt.Println("error:", err)
