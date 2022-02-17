@@ -25,6 +25,7 @@ import (
 	"fmt"
 	log "github.com/cihub/seelog"
 	"github.com/parnurzeal/gorequest"
+	"infini.sh/framework/core/util"
 	"infini.sh/framework/lib/fasthttp"
 	"io"
 	"io/ioutil"
@@ -40,6 +41,7 @@ func BasicAuth(req *fasthttp.Request,user,pass string) {
 }
 
 func Get(url string,auth *Auth,proxy string) (*http.Response, string, []error) {
+
 	request := gorequest.New()
 
 	tr := &http.Transport{
@@ -54,7 +56,7 @@ func Get(url string,auth *Auth,proxy string) (*http.Response, string, []error) {
 		request.SetBasicAuth(auth.User,auth.Pass)
 	}
 
-	request.Header["Content-Type"]= "application/json"
+	//request.Type("application/json")
 
 	if(len(proxy)>0){
 		request.Proxy(proxy)
@@ -78,7 +80,7 @@ func Post(url string,auth *Auth, body string,proxy string)(*http.Response, strin
 		request.SetBasicAuth(auth.User,auth.Pass)
 	}
 
-	request.Header["Content-Type"]="application/json"
+	//request.Type("application/json")
 	
 	if(len(proxy)>0){
 		request.Proxy(proxy)
@@ -148,14 +150,18 @@ func DoRequest(compress bool,method string,loadUrl string,auth *Auth,body []byte
 
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(req)   // <- do not forget to release
-	defer fasthttp.ReleaseResponse(resp) // <- do not forget to release
+	//defer fasthttp.ReleaseRequest(req)   // <- do not forget to release
+	//defer fasthttp.ReleaseResponse(resp) // <- do not forget to release
 
 	req.SetRequestURI(loadUrl)
 	req.Header.SetMethod(method)
 
-	req.Header.Set("Content-Type", "application/json")
+	//req.Header.Set("Content-Type", "application/json")
 
+	if compress {
+		req.Header.Set("Accept-Encoding", "gzip")
+		req.Header.Set("content-encoding", "gzip")
+	}
 
 	if auth!=nil{
 		req.URI().SetUsername(auth.User)
@@ -163,6 +169,21 @@ func DoRequest(compress bool,method string,loadUrl string,auth *Auth,body []byte
 	}
 
 	if len(body)>0{
+
+		//if compress {
+		//	_, err := fasthttp.WriteGzipLevel(req.BodyWriter(), data.Bytes(), fasthttp.CompressBestSpeed)
+		//	if err != nil {
+		//		panic(err)
+		//	}
+		//} else {
+		//	//req.SetBody(body)
+		//	req.SetBodyStreamWriter(func(w *bufio.Writer) {
+		//		w.Write(data.Bytes())
+		//		w.Flush()
+		//	})
+		//
+		//}
+
 		if compress{
 			_, err := fasthttp.WriteGzipLevel(req.BodyWriter(), body, fasthttp.CompressBestSpeed)
 			if err != nil {
@@ -171,6 +192,10 @@ func DoRequest(compress bool,method string,loadUrl string,auth *Auth,body []byte
 		}else{
 			req.SetBody(body)
 
+			//req.SetBodyStreamWriter(func(w *bufio.Writer) {
+			//	w.Write(body)
+			//	w.Flush()
+			//})
 		}
 	}
 
@@ -183,10 +208,12 @@ func DoRequest(compress bool,method string,loadUrl string,auth *Auth,body []byte
 		panic("empty response")
 	}
 
+	log.Debug("received status code", resp.StatusCode, "from", string(resp.Header.Header()), "content", util.SubString(string(resp.Body()),0,500), req)
+
 	if resp.StatusCode() == http.StatusOK || resp.StatusCode() == http.StatusCreated {
 
 	} else {
-		//fmt.Println("received status code", resp.StatusCode, "from", string(resp.Header.Header()), "content", string(resp.Body()), req)
+		//log.Error("received status code", resp.StatusCode, "from", string(resp.Header.Header()), "content", string(resp.Body()), req)
 	}
 
 
@@ -254,7 +281,7 @@ func Request(method string,r string,auth *Auth,body *bytes.Buffer,proxy string)(
 
 	resp,errs := client.Do(reqest)
 	if errs != nil {
-		log.Error(errs)
+		log.Error(util.SubString(errs.Error(),0,500))
 		return "",errs
 	}
 
@@ -270,8 +297,10 @@ func Request(method string,r string,auth *Auth,body *bytes.Buffer,proxy string)(
 
 	respBody,err:=ioutil.ReadAll(resp.Body)
 
+	log.Error(util.SubString(string(respBody),0,500))
+
 	if err != nil {
-		log.Error(err)
+		log.Error(util.SubString(string(err.Error()),0,500))
 		return string(respBody),err
 	}
 
@@ -289,7 +318,7 @@ func DecodeJson(jsonStream string, o interface{})(error) {
 	decoder := json.NewDecoder(strings.NewReader(jsonStream))
 	// UseNumber causes the Decoder to unmarshal a number into an interface{} as a Number instead of as a float64.
 	decoder.UseNumber()
-	decoder.
+	//decoder.
 
 	if err := decoder.Decode(o); err != nil {
 		fmt.Println("error:", err)

@@ -138,17 +138,19 @@ READ_DOCS:
 				log.Error(err)
 			}
 
-			// if we approach the 100mb es limit, flush to es and reset mainBuf
-			if mainBuf.Len()+docBuf.Len() > (c.Config.BulkSizeInMB * 1000000) {
-				goto CLEAN_BUFFER
-			}
 
 			// append the doc to the main buffer
 			mainBuf.Write(docBuf.Bytes())
 			// reset for next document
 			bulkItemSize++
-			docBuf.Reset()
 			(*docCount)++
+			docBuf.Reset()
+
+			// if we approach the 100mb es limit, flush to es and reset mainBuf
+			if mainBuf.Len()+docBuf.Len() > (c.Config.BulkSizeInMB * 1024*1024) {
+				goto CLEAN_BUFFER
+			}
+
 		case <-idleTimeout.C:
 			log.Debug("5s no message input")
 			goto CLEAN_BUFFER
