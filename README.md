@@ -107,6 +107,12 @@ filter migration with range query
 
 ```
 
+range query, keyword type and escape
+
+```
+./esm -s https://192.168.3.98:9200 -m test:123 -o 1.txt -x test1  -q "@timestamp.keyword:[\"2021-01-17 03:41:20\" TO \"2021-03-17 03:41:20\"]"
+```
+
 generate testing data, if `input.json` contains 10 documents, the follow command will ingest 100 documents, good for testing
 ```
 ./bin/esm -i input.json -d  http://localhost:9201 -y target-index1  --regenerate_id  --repeat_times=10 
