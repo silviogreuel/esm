@@ -37,6 +37,22 @@ Bulk 10062602 / 10064570 [==================================================]  9
 Migrated 10,000,000 documents within a minute, Nginx log generated from kibana_sample_data_logs.
 
 
+## Before ESM
+
+Before running the esm, please manually prepare the target index with mapping and optimized settings to improve the speed, for example:
+
+```
+PUT your-new-index
+{
+  "settings": {
+    "index.translog.durability": "async", 
+    "refresh_interval": "-1", 
+    "number_of_shards": 10,
+    "number_of_replicas": 0
+  }
+}
+```
+
 ## Example:
 
 copy index `index_name` from `192.168.1.x` to `192.168.1.y:9200`
