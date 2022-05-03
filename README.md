@@ -2,7 +2,9 @@
 
 Elasticsearch cross version data migration.
 
-[Dec 3rd, 2020: [EN] Cross version Elasticsearch data migration with ESM](https://discuss.elastic.co/t/dec-3rd-2020-en-cross-version-elasticsearch-data-migration-with-esm/256516)
+Links:
+- [Dec 3rd, 2020: [EN] Cross version Elasticsearch data migration with ESM](https://discuss.elastic.co/t/dec-3rd-2020-en-cross-version-elasticsearch-data-migration-with-esm/256516)
+- [Use INFINI Gateway to check the Document-Level differences between two clusters or indices after the migration](https://gateway.infinilabs.com/docs/tutorial/index_diff/)
 
 ## Features:
 
