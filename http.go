@@ -159,7 +159,7 @@ func DoRequest(compress bool, method string, loadUrl string, auth *Auth, body []
 	req.SetRequestURI(loadUrl)
 	req.Header.SetMethod(method)
 
-	//req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 
 	if compress {
 		req.Header.Set("Accept-Encoding", "gzip")

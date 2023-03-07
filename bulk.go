@@ -19,10 +19,11 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/cheggaaa/pb"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/cheggaaa/pb"
 
 	log "github.com/cihub/seelog"
 )
@@ -44,7 +45,6 @@ func (c *Migrator) NewBulkWorker(docCount *int, pb *pb.ProgressBar, wg *sync.Wai
 	taskTimeout := time.NewTimer(taskTimeOutDuration)
 	defer taskTimeout.Stop()
 
-
 READ_DOCS:
 	for {
 		idleTimeout.Reset(idleDuration)
@@ -62,7 +62,7 @@ READ_DOCS:
 			}
 
 			// sanity check
-			for _, key := range []string{"_index", "_type", "_source", "_id"} {
+			for _, key := range []string{"_index", "_source", "_id"} {
 				if _, ok := docI[key]; !ok {
 					break READ_DOCS
 				}
@@ -79,6 +79,10 @@ READ_DOCS:
 
 			if c.Config.OverrideTypeName != "" {
 				tempTargetTypeName = c.Config.OverrideTypeName
+			}
+
+			if c.Config.IgnoreTypeName {
+				tempTargetTypeName = ""
 			}
 
 			doc := Document{
@@ -122,7 +126,7 @@ READ_DOCS:
 			}
 
 			// sanity check
-			if len(doc.Index) == 0 || len(doc.Type) == 0 {
+			if len(doc.Index) == 0 {
 				log.Errorf("failed decoding document: %+v", doc)
 				continue
 			}
@@ -138,7 +142,6 @@ READ_DOCS:
 				log.Error(err)
 			}
 
-
 			// append the doc to the main buffer
 			mainBuf.Write(docBuf.Bytes())
 			// reset for next document
@@ -147,7 +150,7 @@ READ_DOCS:
 			docBuf.Reset()
 
 			// if we approach the 100mb es limit, flush to es and reset mainBuf
-			if mainBuf.Len()+docBuf.Len() > (c.Config.BulkSizeInMB * 1024*1024) {
+			if mainBuf.Len()+docBuf.Len() > (c.Config.BulkSizeInMB * 1024 * 1024) {
 				goto CLEAN_BUFFER
 			}
 
@@ -166,7 +169,7 @@ READ_DOCS:
 		log.Trace("clean buffer, and execute bulk insert")
 		pb.Add(bulkItemSize)
 		bulkItemSize = 0
-		if c.Config.SleepSecondsAfterEachBulk >0{
+		if c.Config.SleepSecondsAfterEachBulk > 0 {
 			time.Sleep(time.Duration(c.Config.SleepSecondsAfterEachBulk) * time.Second)
 		}
 	}
