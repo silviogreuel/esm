@@ -4,10 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/cheggaaa/pb"
-	log "github.com/cihub/seelog"
-	goflags "github.com/jessevdk/go-flags"
-	"github.com/mattn/go-isatty"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -18,6 +14,11 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/cheggaaa/pb"
+	log "github.com/cihub/seelog"
+	goflags "github.com/jessevdk/go-flags"
+	"github.com/mattn/go-isatty"
 )
 
 func main() {
@@ -79,8 +80,8 @@ func main() {
 
 	//至少输出一次
 	if c.RepeatOutputTimes < 1 {
-		c.RepeatOutputTimes=1
-	}else{
+		c.RepeatOutputTimes = 1
+	} else {
 		log.Info("source data will repeat send to target: ", c.RepeatOutputTimes, " times, the document id will be regenerated.")
 	}
 
@@ -88,7 +89,7 @@ func main() {
 
 		for i := 0; i < c.RepeatOutputTimes; i++ {
 
-			if c.RepeatOutputTimes>1 {
+			if c.RepeatOutputTimes > 1 {
 				log.Info("repeat round: ", i+1)
 			}
 
@@ -117,18 +118,18 @@ func main() {
 				if errs != nil {
 					return
 				}
-				if strings.HasPrefix(srcESVersion.Version.Number, "7.") {
+				if strings.HasPrefix(srcESVersion.Version.Number, "7.") || strings.HasPrefix(srcESVersion.Version.Number, "1.3.") {
 					log.Debug("source es is V7,", srcESVersion.Version.Number)
 					api := new(ESAPIV7)
 					api.Host = c.SourceEs
-					api.Compress=c.Compress
+					api.Compress = c.Compress
 					api.Auth = migrator.SourceAuth
 					api.HttpProxy = migrator.Config.SourceProxy
 					migrator.SourceESAPI = api
 				} else if strings.HasPrefix(srcESVersion.Version.Number, "6.") {
 					log.Debug("source es is V6,", srcESVersion.Version.Number)
 					api := new(ESAPIV6)
-					api.Compress=c.Compress
+					api.Compress = c.Compress
 					api.Host = c.SourceEs
 					api.Auth = migrator.SourceAuth
 					api.HttpProxy = migrator.Config.SourceProxy
@@ -137,7 +138,7 @@ func main() {
 					log.Debug("source es is V5,", srcESVersion.Version.Number)
 					api := new(ESAPIV5)
 					api.Host = c.SourceEs
-					api.Compress=c.Compress
+					api.Compress = c.Compress
 					api.Auth = migrator.SourceAuth
 					api.HttpProxy = migrator.Config.SourceProxy
 					migrator.SourceESAPI = api
@@ -145,7 +146,7 @@ func main() {
 					log.Debug("source es is not V5,", srcESVersion.Version.Number)
 					api := new(ESAPIV0)
 					api.Host = c.SourceEs
-					api.Compress=c.Compress
+					api.Compress = c.Compress
 					api.Auth = migrator.SourceAuth
 					api.HttpProxy = migrator.Config.SourceProxy
 					migrator.SourceESAPI = api
